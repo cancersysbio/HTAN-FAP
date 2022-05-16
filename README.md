@@ -1,4 +1,4 @@
-### Code repository of publication: *Human Tumor Atlas Network (HTAN) FAP (Horning AM et al., 2022)*
+### Code repository of publication: *Human Tumor Atlas Network (HTAN) FAP Atlas (Horning AM et al., 2022)*
 
 ## :file_folder: Repository content ###
 
