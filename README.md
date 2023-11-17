@@ -1,4 +1,4 @@
-### Code repository of publication: *Human Tumor Atlas Network (HTAN) FAP Atlas (Horning AM et al., 2022)*
+### Code repository of publication: *Multi-ancestral origins of colorectal lesions (Schenck, Khan, Horning et al., 2023)*
 
 ## :file_folder: Repository content ###
 
