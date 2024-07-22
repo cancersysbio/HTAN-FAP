@@ -1,7 +1,7 @@
 
 # Model
 
-This directory contains the mathematical model and (inference framework)[INFERENCE.md].
+This directory contains the mathematical model and [inference framework](INFERENCE.md).
 
 ### Parameters
 
