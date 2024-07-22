@@ -2,13 +2,15 @@
 
 The inference procedure can be ran using the `exe_abc.py` script within this directory.
 
-# Summary statistics extraction
+## Summary statistics extraction
 
 We first use `extract_summary_stats.py` to generate and save summary stats for each sample in our MAF file from the `purity_CCF` column.
 
 ```
 python extract_summary_stats.py
 ```
+
+## Executing inferences
 
 This generates the outputs from the data used in the inference method.
 
