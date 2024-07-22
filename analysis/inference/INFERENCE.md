@@ -2,6 +2,16 @@
 
 The inference procedure can be ran using the `exe_abc.py` script within this directory.
 
+# Summary statistics extraction
+
+We first use `extract_summary_stats.py` to generate and save summary stats for each sample in our MAF file from the `purity_CCF` column.
+
+```
+python extract_summary_stats.py
+```
+
+This generates the outputs from the data used in the inference method.
+
 ```bash
 # From within the repos parent directory:
 (pyabc) [rschenck@smsh11dsu-srcf-d15-37 model]$ python ./analysis/inference/exe_abc.py --help
