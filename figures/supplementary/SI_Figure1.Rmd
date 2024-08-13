@@ -1,0 +1,219 @@
+---
+title: "WGS/WES coverage - SI Figure 1"
+author: 
+  - name: "Aziz Khan"
+    affiliation: "Stanford Cancer Institute, Stanford University"
+    email: "azizk@stanford.edu"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+---
+
+## Setup the base paths
+```{r setup}
+
+set.seed(4321)
+# Set the base path to the FAP-HTAN github repo
+main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+
+# Paths to data and output directories
+data_path <- file.path(main_repo_path, "data")
+output_path <- file.path(main_repo_path, "reproduce")
+
+if ((!exists("main_repo_path")) | main_repo_path == "") {
+  stop("Error: Path for main GitHub repo is not set. Please set main_repo_path <- '/path/to/repo/HTAN-FAP' and try again!")
+}
+
+# Create output directory to save the plots if it doesn't exist
+if (!dir.exists(output_path)) {
+  dir.create(output_path)
+}
+```
+
+## Load the required packages
+
+```{r load-packages, include=FALSE}
+library(dplyr)
+library(ggpubr)
+library(cowplot)
+```
+
+
+## Multi-polyp FAP cohort
+
+### Load the data
+```{r}
+
+# read wgs coverage
+mosdepth_htan_wgs <- read.table(paste0(data_path,"/coverage/htan_fap_coverage_wgs.tsv"), sep = "\t", header = T)
+mosdepth_htan_wgs$Stage <- factor(mosdepth_htan_wgs$Stage, levels = c("Mucosa","Benign","Dysplasia","AdCa"))
+
+# read wes coverage
+mosdepth_htan_wes <- read.table(paste0(data_path,"/coverage/htan_fap_coverage_wes.tsv"), sep = "\t", header = T)
+mosdepth_htan_wes$Stage <- factor(mosdepth_htan_wes$Stage, levels = c("Mucosa","Benign","Dysplasia","AdCa"))
+
+
+head(mosdepth_htan_wes)
+
+```
+ 
+### Distributions of WGS/WES samples
+
+Here is the distrubution of samples for our multi-polyp cohort.  
+
+```{r, fig.width=4,fig.height=3}
+
+stage_color_plates_sporadic <- c("#eb8f93","#b392b4")
+stage_color_plates <- c("#66C2A5","#FC8D62", "#8DA0CB","#E78AC3","#eb8f93","#b392b4","#A6D854","#FFD92F","#E5C494","#B3B3B3")
+
+  
+ggplot(mosdepth_htan_wgs, aes(x = Patient, fill=Stage )) + 
+    geom_bar() +
+    theme_cowplot(12) + scale_fill_manual(values = stage_color_plates) + labs(x="Patients", y= "Number of WGS samples")
+
+
+ggplot(mosdepth_htan_wes, aes(x = Patient, fill=Stage )) + 
+    geom_bar() +
+    theme_cowplot(12) + scale_fill_manual(values = stage_color_plates) + labs(x="Patients", y= "Number of WES samples")
+
+si_figure1_htan <- ggplot(rbind(mosdepth_htan_wgs, mosdepth_htan_wes) %>% distinct(Tumor_Sample_Barcode, .keep_all = TRUE), aes(x = Patient, fill=Stage )) + 
+    geom_bar() +
+    theme_cowplot(12) + scale_fill_manual(values = stage_color_plates) + labs(x="Patients", y= "Number of unique WGS/WES samples")
+
+si_figure1_htan
+```
+
+
+### Per-sample coverage
+
+Coverage per-sample coverage for multi-region cohort
+
+```{r, fig.width=16,fig.height=4}
+
+# add an * for samples with wgs and wes data
+wes_ids <- mosdepth_htan_wes %>% dplyr::select(Tumor_Sample_Barcode) %>% pull()
+wes_wgs_ids <- mosdepth_htan_wgs %>% filter(Tumor_Sample_Barcode %in% wes_ids) %>% 
+  dplyr::select(Tumor_Sample_Barcode) %>% pull()
+
+mosdepth_htan_wgs <- mosdepth_htan_wgs %>% 
+  mutate(Tumor_Sample_Barcode = ifelse(Tumor_Sample_Barcode %in% wes_wgs_ids, paste0(Tumor_Sample_Barcode, "*"), Tumor_Sample_Barcode))
+
+head(mosdepth_htan_wgs)
+
+mosdepth_htan_wes <- mosdepth_htan_wes %>% 
+  mutate(Tumor_Sample_Barcode = ifelse(Tumor_Sample_Barcode %in% wes_wgs_ids, paste0(Tumor_Sample_Barcode, "*"), Tumor_Sample_Barcode))
+
+
+mosdepth_htan_wes.p <- ggplot(mosdepth_htan_wes, aes(x=reorder(Tumor_Sample_Barcode, median_coverage), y=median_coverage, fill=Stage)) + 
+    geom_col()+
+    labs(title=paste("WES coverage - multi-polyp FAP"), y="Median coverage", x = "Sample names") + theme_cowplot(12) +
+    theme(axis.text.x = element_text(angle = 90, hjust=1),) + geom_hline(aes(yintercept=mean(median_coverage)), linetype=2) +
+    facet_grid(.~Patient, scale="free_x", space="free_x") + scale_fill_manual(values=stage_color_plates)
+
+mosdepth_htan_wgs.p <- ggplot(mosdepth_htan_wgs, aes(x=reorder(Tumor_Sample_Barcode, median_coverage), y=median_coverage, fill=Stage)) + 
+    geom_col() +
+    labs(title=paste("WGS coverage - multi-polyp FAP"), y="Median coverage", x = "Sample names") + theme_cowplot(12) +
+    theme(axis.text.x = element_text(angle = 90, hjust=1)) + geom_hline(aes(yintercept=mean(median_coverage)), linetype=2) +
+    facet_grid(.~Patient, scale="free_x", space="free_x") + scale_fill_manual(values=stage_color_plates)
+
+
+mosdepth_htan_wgs.p
+mosdepth_htan_wes.p
+```
+
+
+## FAP multi-region cohort
+
+### Load FAP multi-region WES cohort data
+
+```{r, fig.width=4,fig.height=3}
+
+mosdepth_ftang  <- read.table(paste0(data_path,"/coverage/fap_multiregion_coverage_wes.tsv"), sep = "\t", header = T) 
+mosdepth_ftang$Stage <- factor(mosdepth_ftang$Stage, levels = c("Mucosa", "Benign", "Dysplasia", "AdCa"))
+
+si_figure1_multiregion <- ggplot(mosdepth_ftang, aes(x = Patient, fill=Stage )) + 
+    geom_bar() +
+    theme_cowplot(12) + scale_fill_manual(values = stage_color_plates) + labs(x="Patients", y= "Number of WES samples")
+
+si_figure1_multiregion
+```
+
+### FAP multi-region WES coverage
+
+```{r, fig.width=16,fig.height=4}
+## Print the mean coverages
+print(paste0("WES mean coverage: ", round(mean(mosdepth_ftang$median_coverage)),"x (n=",length(unique(mosdepth_ftang$Tumor_Sample_Barcode)),")"))
+
+mosdepth_ftang_plot <- ggplot(mosdepth_ftang, aes(x=reorder(Tumor_Sample_Barcode, median_coverage), y=median_coverage, fill=Stage)) + 
+    geom_col()+
+    labs(title=paste("Multi-region FAP cohort coverage (WES)"), y="Median coverage", x = "Sample names") + theme_cowplot(12) +
+    theme(axis.text.x = element_text(angle = 90, hjust=1),) + geom_hline(aes(yintercept=mean(median_coverage)), linetype=2) +
+    facet_grid(.~Patient, scale="free_x", space="free_x") + scale_fill_manual(values=stage_color_plates)
+
+mosdepth_ftang_plot
+
+```
+
+
+
+## Sporadic CRC WES cohort 
+
+### Load data and sample distribution
+
+```{r, fig.width=6,fig.height=3}
+
+mosdepth_cross2018 <- read.table(paste0(data_path,"/coverage/crc_multiregion_coverage_wes.tsv"), sep = "\t", header = T)
+
+si_figure1_crc <- ggplot(mosdepth_cross2018, aes(x = Patient, fill=Stage )) + 
+    geom_bar() +
+    theme_cowplot(12) + scale_fill_manual(values = stage_color_plates_sporadic) + labs(x="Patients", y= "Number of WES samples")
+
+si_figure1_crc
+```
+
+
+### Per-sample coverage 
+
+```{r, fig.width=16,fig.height=4}
+## Print the mean coverages
+print(paste0("WES mean coverage: ", round(mean(mosdepth_cross2018$median_coverage)),"x (n=",length(unique(mosdepth_cross2018$Tumor_Sample_Barcode)),")"))
+
+mosdepth_cross2018_plot <- ggplot(mosdepth_cross2018, aes(x=reorder(Tumor_Sample_Barcode, median_coverage), y=median_coverage, fill=Stage)) + 
+    geom_col()+
+    labs(title=paste("Sporadic CRC cohort coverage (WES)"), y="Median coverage", x = "Sample names") + theme_cowplot(12) +
+    theme(axis.text.x = element_text(angle = 90, hjust=1),) + geom_hline(aes(yintercept=mean(median_coverage)), linetype=2) +
+    facet_grid(.~Patient, scale="free_x", space="free_x") + scale_fill_manual(values=stage_color_plates_sporadic)
+
+mosdepth_cross2018_plot
+
+```
+
+
+## Arrange the figure SI 1
+Commbine all the panels together in one figure and save as PDF
+
+```{r, fig.width=14,fig.height=16}
+si_figure1_combined <- ggarrange(
+  ggarrange(si_figure1_htan, si_figure1_multiregion, si_figure1_crc, ncol = 3, widths = c(1,1,1.6)),
+  mosdepth_htan_wgs.p,
+  mosdepth_htan_wes.p, 
+  mosdepth_ftang_plot, 
+  mosdepth_cross2018_plot, 
+  ncol = 1, nrow = 5, labels=c("a","b","c","d","e"))
+
+si_figure1_combined
+
+## save the plot
+ggsave(paste0(output_path,"/Figure_SI_1.pdf"), si_figure1_combined, width = 12, height = 14)
+
+```
+
+
+## Show session information
+```{r session-info}
+sessionInfo()
+```
