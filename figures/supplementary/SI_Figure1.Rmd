@@ -80,9 +80,13 @@ ggplot(mosdepth_htan_wes, aes(x = Patient, fill=Stage )) +
     geom_bar() +
     theme_cowplot(12) + scale_fill_manual(values = stage_color_plates) + labs(x="Patients", y= "Number of WES samples")
 
-si_figure1_htan <- ggplot(rbind(mosdepth_htan_wgs, mosdepth_htan_wes) %>% distinct(Tumor_Sample_Barcode, .keep_all = TRUE), aes(x = Patient, fill=Stage )) + 
+ggplot(rbind(mosdepth_htan_wgs, mosdepth_htan_wes) %>% distinct(Tumor_Sample_Barcode, .keep_all = TRUE), aes(x = Patient, fill=Stage )) + 
     geom_bar() +
     theme_cowplot(12) + scale_fill_manual(values = stage_color_plates) + labs(x="Patients", y= "Number of unique WGS/WES samples")
+
+si_figure1_htan <- ggplot(rbind(mosdepth_htan_wgs, mosdepth_htan_wes), aes(x = Patient, fill=Stage )) + 
+    geom_bar() +
+    theme_cowplot(12) + scale_fill_manual(values = stage_color_plates) + labs(x="Patients", y= "Number of WGS+WES samples")
 
 si_figure1_htan
 ```
