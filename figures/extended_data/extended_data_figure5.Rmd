@@ -1,0 +1,146 @@
+---
+title: "Signature analysis - ED Figure 5"
+author: 
+  - name: "Aziz Khan"
+    affiliation: "Stanford Cancer Institute, Stanford University"
+    email: "azizk@stanford.edu"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+---
+
+## Setup the base paths
+```{r setup}
+
+set.seed(4321)
+# Set the base path to the FAP-HTAN github repo
+main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+
+# Paths to data and output directories
+data_path <- file.path(main_repo_path, "data")
+output_path <- file.path(main_repo_path, "reproduce")
+
+if ((!exists("main_repo_path")) | main_repo_path == "") {
+  stop("Error: Path for main GitHub repo is not set. Please set main_repo_path <- '/path/to/repo/HTAN-FAP' and try again!")
+}
+
+# Create output directory to save the plots if it doesn't exist
+if (!dir.exists(output_path)) {
+  dir.create(output_path)
+}
+```
+
+## Load the required packages
+
+```{r load-packages, include=FALSE}
+
+library("BSgenome.Hsapiens.UCSC.hg38", quietly = TRUE)
+library(dplyr)
+library(ggpubr)
+library(cowplot)
+library(MutationalPatterns)
+
+ref_genome <- "BSgenome.Hsapiens.UCSC.hg38"
+```
+
+
+## Mutational signature analysis
+
+### Load the 96 trinucleotide mutation count matrix
+
+```{r load-data}
+
+wgs_all_matrix <- as.matrix(read.table(paste0(main_repo_path,"/data/htan_fap_tnn_matrix_wgs_per-sample.mat"), sep = "\t", header = TRUE, row.names = 1))
+
+head(wgs_all_matrix)
+
+wgs_tnn_stages <- as.matrix(read.table(paste0(main_repo_path,"/data/htan_fap_tnn_matrix_wgs_per-stage.mat"), sep = "\t", header = TRUE, row.names = 1))
+
+head(wgs_tnn_stages)
+```
+
+### Get known COSMIC (v3.2) signatures including clock-like SBS1/5
+
+```{r get-signatures}
+
+## get all cosmic signatures
+all_signatures = get_known_signatures(muttype="snv",
+                                  genome = "GRCh38", 
+                                  source="COSMIC_v3.2"
+                                  )
+## define clock-like signatures
+clocklike_signatures <- paste0("SBS", c(1,5,18,40))
+
+## select only clock-like signatures
+signatures <- all_signatures[, clocklike_signatures]
+
+head(signatures)
+```
+
+### Fit the matrix to the selected COSMIC signatures
+
+```{r fit-signatures}
+
+fit_res_wgs_stage <- fit_to_signatures(wgs_tnn_stages, signatures)
+
+head(fit_res_wgs_stage$reconstructed)
+cos_sim(as.numeric(wgs_tnn_stages), as.numeric(fit_res_wgs_stage$reconstructed))
+```
+
+### Compare the original profile with reconstructed
+
+Get 96 profiles for original and reconstructed for the combined sample per-stage
+
+```{r compare-signatures, fig.width=12,fig.height=6}
+
+tnn_satges <- c("Mucosa", "Benign", "Dysplasia")
+
+plot_compare_profiles_list <- list()
+for(i in 1:3)
+{
+  plot_compare_profiles_list[[tnn_satges[i]]] <- plot_compare_profiles(wgs_tnn_stages[, i],
+    fit_res_wgs_stage$reconstructed[, i],
+    profile_names = c(paste0("O.", tnn_satges[i]), paste0("R.", tnn_satges[i])),
+    condensed = T,
+    profile_ymax = 0.15,
+  )
+}
+
+## save the plots
+
+compare_profiles.plots <- ggarrange(plotlist =  plot_compare_profiles_list, nrow = 3, ncol = 1)
+
+ggsave(paste0(output_path,"/ED_Figure_5a.pdf"),
+       compare_profiles.plots, width = 12, height = 16)
+
+plot_compare_profiles_list
+```
+
+### Get relative contribution and cosine similarity scores
+
+```{r plot-contributions, fig.width=12,fig.height=4}
+
+sig.plt.contib.hp <- plot_contribution_heatmap(fit_res_wgs_stage$contribution, cluster_sigs=F)
+
+plot_orig_vs_reconstructed <- plot_original_vs_reconstructed(wgs_tnn_stages, fit_res_wgs_stage$reconstructed, y_intercept = 0.95) + theme_cowplot(12)
+
+cos_sim_samples_signatures <- cos_sim_matrix(wgs_tnn_stages, signatures)
+cosim.plt <- plot_cosine_heatmap(cos_sim_samples_signatures, cluster_rows = TRUE, cluster_cols = TRUE)
+
+sig.plot.combined <- ggarrange(sig.plt.contib.hp, cosim.plt, plot_orig_vs_reconstructed, ncol = 3, widths = c(2,2,1), labels = c("b","c","d"))
+
+ggsave(paste0(output_path,"/ED_Figure_5b_c.pdf"), sig.plot.combined, width = 10, height = 4)
+sig.plot.combined
+
+```
+
+## Show session information
+```{r session-info}
+sessionInfo()
+```
+
+
