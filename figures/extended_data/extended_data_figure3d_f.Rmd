@@ -1,0 +1,124 @@
+---
+title: "Fraction of genome altered - ED Figure 3"
+author: 
+  - name: "Aziz Khan"
+    affiliation: "Stanford Cancer Institute, Stanford University"
+    email: "azizk@stanford.edu"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+---
+
+## Setup the base paths
+```{r setup}
+
+set.seed(4321)
+# Set the base path to the FAP-HTAN github repo
+main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+
+# Paths to data and output directories
+data_path <- file.path(main_repo_path, "data")
+output_path <- file.path(main_repo_path, "reproduce")
+
+if ((!exists("main_repo_path")) | main_repo_path == "") {
+  stop("Error: Path for main GitHub repo is not set. Please set main_repo_path <- '/path/to/repo/HTAN-FAP' and try again!")
+}
+
+# Create output directory to save the plots if it doesn't exist
+if (!dir.exists(output_path)) {
+  dir.create(output_path)
+}
+```
+
+## Load the required packages
+
+```{r load-packages, include=FALSE}
+library(dplyr)
+library(ggpubr)
+
+```
+
+
+## Read FGA data
+Load the percent/fraction genome altered estimates computed using `pct.genome.changed` function from R package svpluscnv by inputing the CNA segments from FACETS.
+```{r}
+
+## These are 
+pct_genome_altered <- read.table(paste0(data_path,"/fap_crc_percent_genome_altered.tsv"), sep = "\t", header = TRUE)
+pct_genome_altered$Stage = factor(pct_genome_altered$Stage, levels=c("Mucosa", "Benign", "Dysplasia","AdCa", "Adenoma", "Carcinoma"))
+
+head(pct_genome_altered)
+
+# color plate for monoclonal and polyclonal in each stage
+stage_color_plates_sporadic <- c("#eb8f93","#b392b4")
+
+stage_color_plates <- c("#66C2A5","#FC8D62", "#8DA0CB","#E78AC3","#eb8f93","#b392b4","#A6D854","#FFD92F","#E5C494","#B3B3B3")
+
+```
+
+
+
+## Fraction of genome altered across stage/cohort
+Compare the FGA across stages with-in the three cohorts.
+
+```{r, fig.width= 12, fig.height= 6}
+
+fga_plot_list <- list()
+
+wes_comparisons <- list(c("Mucosa", "Benign"), c("Benign", "Dysplasia"), c("Benign", "AdCa"), c("AdCa", "Dysplasia"))
+
+for(cohort in c("HTAN","PKU-THU","BCI-QMUL")){
+   
+  ## plot list
+  fga_plot_list[[cohort]] <- ggboxplot(pct_genome_altered %>% filter(Cohort == cohort), x="Stage", y="pct_change", color ="Stage",
+         palette = if(cohort == "BCI-QMUL") stage_color_plates_sporadic else stage_color_plates,
+         add = "jitter", add.params = list(fill = "white")) +
+    stat_compare_means(comparisons = if(cohort=="BCI-QMUL") list(c("Adenoma", "Carcinoma")) else wes_comparisons,
+                       label = "p.format", paired=F, method = "wilcox.test", method.args = list(alternative = "two.sided")) +
+    stat_compare_means(label.y = 0.5) + 
+    labs(title=cohort ,x="", y = "Fraction of genome altered")
+
+}
+
+fga_plot_combined <- ggarrange(plotlist = fga_plot_list, ncol = 3, nrow = 1, widths=c(2,2,1.5))
+
+fga_plot_combined
+
+## save the plot
+ggsave(paste0(output_path,"/ED_Figure_3d.pdf"), fga_plot_combined, width = 12, height = 6)
+
+```
+
+
+## FAP cohorts combined
+Box plot where both the multi-region and multi-polyp(internal) cohorts are combined and compared with sporadic CRC cohort.
+
+```{r, fig.width=6,fig.height=6}
+
+cohort_comparisons <- list(c("Benign", "Mucosa"),c("Benign", "Dysplasia"), c("Dysplasia", "Adenoma"), c("Benign", "AdCa"), c("Benign", "Adenoma"),c("AdCa", "Adenoma"),c("Carcinoma", "Adenoma"), c("Dysplasia", "AdCa"), c("Carcinoma", "AdCa"))
+
+pct_plot_fap <- ggboxplot(pct_genome_altered, x="Stage", y="pct_change", color = "Stage",
+         palette = stage_color_plates,
+         error.plot="errorbar",
+         add = "jitter", add.params = list(fill = "white")) +
+    stat_compare_means(comparisons = cohort_comparisons, 
+                        label = "p.format", paired=F, method = "wilcox.test", method.args = list(alternative = "two.sided")) +
+    #stat_compare_means(label.y = .6) + 
+    labs(title="FGA with FAP cohorts combined" ,x="", y = "Fraction of genome altered")
+
+pct_plot_fap
+
+ggsave(paste0(output_path,"/ED_Figure_3e.pdf"), pct_plot_fap, width = 8, height = 6)
+
+```
+
+
+## Show session information
+```{r session-info}
+sessionInfo()
+```
+
