@@ -12,5 +12,12 @@ This was developed using `Python 3.10.14` and [`PAUP`](https://paup.phylosolutio
 
 Python modules required:
 ```
-
+pandas
+numpy
+seaborn
+matplotlib
+joblib
+pyarrow
+ete3
+BioPython
 ```
