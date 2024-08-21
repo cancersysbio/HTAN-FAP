@@ -1,6 +1,6 @@
-### Code repo of publication: *Polyclonal origins of human premalignant colorectal lesions*
+### Code repo for: *Polyclonal origins of human premalignant colorectal lesions*
 
-## :file_folder: Repository content ###
+### :file_folder: Repository content ###
 
 This GitHub repository contains the following folders:
 ```
@@ -16,5 +16,12 @@ This GitHub repository contains the following folders:
 |   
 ```
 
-## :white_check_mark: Citation
+### :file_folder: Access to data
+- DNA sequencing data and metadata have been deposited at the HTAN portal: https://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id=phs002371.v3.p1.
+
+- The raw  single-crypt WGS data have been deposited in NGDC under the accession number PRJCA023981 (https://ngdc.cncb.ac.cn/bioproject/browse/PRJCA023981).
+  
+- WES data for the FAP multi-region and sporadic CRC cohorts should be requested through the original authors/organizations. 
+
+### :white_check_mark: Citation
 
