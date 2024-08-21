@@ -1,4 +1,4 @@
-### Code repository of publication: *Polyclonal origins of human premalignant colorectal lesions*
+### Code repo of publication: *Polyclonal origins of human premalignant colorectal lesions*
 
 ## :file_folder: Repository content ###
 
