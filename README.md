@@ -1,4 +1,4 @@
-### Code repository of publication: *Multi-ancestral origins of colorectal lesions (Schenck, Khan, Horning et al., 2023)*
+### Code repository of publication: *Polyclonal origins of human premalignant colorectal lesions*
 
 ## :file_folder: Repository content ###
 
@@ -9,7 +9,7 @@ This GitHub repository contains the following folders:
 |   └─ 
 └─ figures/: directory containing scripts, notebooks and other code to reproduce figures
 |   └─ main:/ scripts and notebooks for main figures
-|   └─ extended_data:/ scripts and notebooks forextended data figures
+|   └─ extended_data:/ scripts and notebooks for extended data figures
 |   └─ supplementary:/ scripts and notebooks for supplementary figures
 | 
 └─ data/: directory containing summary level data to generate main, extended and SI figures
