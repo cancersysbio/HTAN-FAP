@@ -1,0 +1,116 @@
+---
+title: "Single-crypt WGS SNVs - Figure 4c,e"
+author: 
+  - name: "Aziz Khan"
+    affiliation: "Stanford Cancer Institute, Stanford University"
+    email: "azizk@stanford.edu"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+---
+
+## Setup the base paths
+```{r setup}
+
+set.seed(4321)
+# Set the base path to the FAP-HTAN github repo
+main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+
+# Paths to data and output directories
+data_path <- file.path(main_repo_path, "data")
+output_path <- file.path(main_repo_path, "reproduce")
+
+if ((!exists("main_repo_path")) | main_repo_path == "") {
+  stop("Error: Path for main GitHub repo is not set. Please set main_repo_path <- '/path/to/repo/HTAN-FAP' and try again!")
+}
+
+# Create output directory to save the plots if it doesn't exist
+if (!dir.exists(output_path)) {
+  dir.create(output_path)
+}
+```
+
+## Load the required packages
+
+```{r load-packages, include=FALSE}
+library(dplyr)
+library(ggpubr)
+library(maftools)
+library(MesKit)
+```
+
+### Load the MAF files
+
+```{r load MAF}
+fap_project_path <- "~/stanford/projects/FAP"
+
+# Download the maf and clinical_info file from the Zenodo
+sg.wgs.maf.file <- paste0(fap_project_path,'/data/sgWGS_MAF/FAP03_sgWGS_maf_all_SSNVs_consensus_filtered.maf')
+sg.wgs.cln.file <- paste0(fap_project_path,'/data/sgWGS_MAF/clinical_info.tsv')
+
+sgwgs_maf <- read.maf(sg.wgs.maf.file, clinicalData = sg.wgs.cln.file)
+
+head(sgwgs_maf@data)
+
+```
+
+
+## Create a MesKit MAF object
+
+```{r}
+meskit_sg.obj <- readMaf(mafFile=sg.wgs.maf.file,  clinicalFile = sg.wgs.cln.file, refBuild="hg38")
+```
+
+## Plot the SNVS heatmap
+
+A distribution of shared, private and ubiquitous somatic SNVs (SSNVs) across the sequenced crypts. The number of exonic coding mutations called from WGS are indicated in the top panel.
+
+```{r, fig.width=6, fig.height=7}
+
+#pdf(paste0(fap_project_path,"/figures/2022/sgWGS_heatmap.pdf"), width = 16, height = 16)
+
+mutHeatmap(meskit_sg.obj, use.ccf = FALSE, patient.id = "FAP03", use.tumorSampleLabel = T) 
+
+#dev.off()
+
+```
+
+
+## Create the oncplot
+Exonic mutation count in cancer-associated genes and chromatin modifiers in individual crypts, grouped by regions, as indicated in the phylogeny. Mutation type is indicated by the color in the heatmap.
+
+```{r, fig.width=8, fig.height=12}
+
+creg_crc_genes <- c("APC", "ERBB4", "SIN3B", "CHD8", "AFF3", "LRP1B", "KDM4B", "PBRM1", "KMT2B", "SETD5", "FBXW7", "PTPRT")
+
+creg_crc_genes_vaf = subsetMaf(maf= sgwgs_maf, genes = creg_crc_genes, fields = "VAF", mafObj = FALSE)[,mean(VAF, na.rm = TRUE), Hugo_Symbol]
+colnames(creg_crc_genes_vaf)[2] = "VAF"
+
+
+## save the plot 
+#pdf(paste0(fap_project_path,"/sgWGS_oncoplot_drivers._Reg.pdf"), width = 8, height = 12)
+oncoplot(maf = sgwgs_maf, genes = creg_crc_genes, altered=T, minMut=1,
+         leftBarData = creg_crc_genes_vaf,
+         leftBarLims = c(0, 1),
+         showTumorSampleBarcodes=T,
+         removeNonMutated=F,
+          sortByAnnotation=T,
+         sampleOrder=sort(sgwgs_maf@clinical.data$Tumor_Sample_Barcode),
+         clinicalFeatures=c("Tumor_ID")
+         )
+
+#dev.off()
+
+```
+
+
+## Show session information
+```{r session-info}
+sessionInfo()
+```
+
+
