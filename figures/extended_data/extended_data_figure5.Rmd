@@ -37,7 +37,7 @@ if (!dir.exists(output_path)) {
 ## Load the required packages
 
 ```{r load-packages, include=FALSE}
-
+library(maftools)
 library("BSgenome.Hsapiens.UCSC.hg38", quietly = TRUE)
 library(dplyr)
 library(ggpubr)
@@ -50,20 +50,51 @@ ref_genome <- "BSgenome.Hsapiens.UCSC.hg38"
 
 ## Mutational signature analysis
 
-### Load the 96 trinucleotide mutation count matrix
+### Compute the 96 trinucleotide mutation count matrix
 
 ```{r load-data}
+## load MAF file
+var_types_signatures <- c("Frame_Shift_Del", "Frame_Shift_Ins", "Splice_Site", "Translation_Start_Site",
+                     "Nonsense_Mutation", "Nonstop_Mutation", "In_Frame_Del",
+                     "In_Frame_Ins", "Missense_Mutation", "Silent", "Intron", "RNA", "Splice_Region", "5'UTR", "5'Flank", "3'UTR", "3'Flank","IGR","Targeted_Region" )
 
-wgs_all_matrix <- as.matrix(read.table(paste0(main_repo_path,"/data/htan_fap_tnn_matrix_wgs_per-sample.mat"), sep = "\t", header = TRUE, row.names = 1))
+htan_wgs_maf <- read.maf("~/stanford/projects/FAP/results/consensus_calls/01.09.2025/HTAN_WGS_filtered_ppVAFs.maf", vc_nonSyn = var_types_signatures)
 
-head(wgs_all_matrix)
+## Get TNN
+tnn_wgs_per_sample <- trinucleotideMatrix(maf = htan_wgs_maf, add = TRUE, useSyn =FALSE, ref_genome = "BSgenome.Hsapiens.UCSC.hg38")
+wgs_all_matrix <-  t(tnn_wgs_per_sample$nmf_matrix)
 
-wgs_tnn_stages <- as.matrix(read.table(paste0(main_repo_path,"/data/htan_fap_tnn_matrix_wgs_per-stage.mat"), sep = "\t", header = TRUE, row.names = 1))
+write.table(wgs_all_matrix, file=paste0(data_path,"/htan_fap_tnn_matrix_wgs_per-sample.mat"), sep = "\t", quote = F, row.names = T, col.names = T)
 
+## get the matrix for each satge by adding up all the mutations per-stage
+tnn_satges <- c("Mucosa", "Benign", "Dysplasia")
+wgs_tnn_stages <- matrix(0, nrow = 96, ncol = length(tnn_satges))
+rownames(wgs_tnn_stages) <- rownames(wgs_all_matrix)
+
+## add clinical info
+
+clin.file_htan <- paste0(data_path,'/Table_S2.csv')
+clin_htan.df <- read.delim(clin.file_htan, sep = ",", header = T) %>% dplyr::filter(Is_FFPE == "No",  Stage != "AdCa", Has_WGS == "Yes")
+
+i=1
+for(stage in tnn_satges)
+{
+  stage_ids <- clin_htan.df %>% dplyr::filter(Stage == stage) %>% dplyr::select(Tumor_Sample_Barcode) %>% pull()
+  wgs_tnn_stages[, i] <- rowSums(wgs_all_matrix[ ,stage_ids])
+  i = i +1
+}
+colnames(wgs_tnn_stages) <- c("Mucosa", "Benign", "Dysplasia")
 head(wgs_tnn_stages)
+
+## 
+write.table(wgs_tnn_stages, file=paste0(data_path,"/htan_fap_tnn_matrix_wgs_per-stage.mat"), sep = "\t", quote = F, row.names = T, col.names = T)
+
+#head(read_matrix_data)
 ```
 
+
 ### Get known COSMIC (v3.2) signatures including clock-like SBS1/5
+
 
 ```{r get-signatures}
 
