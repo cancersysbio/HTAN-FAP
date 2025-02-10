@@ -1,0 +1,230 @@
+---
+title: " APC and KRAS somatic hits - ED Figure 2"
+author: 
+  - name: "Aziz Khan"
+    affiliation: "Stanford Cancer Institute, Stanford University"
+    email: "azizk@stanford.edu"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+---
+
+## Setup the base paths
+```{r setup}
+set.seed(4321)
+# Set the base path to the FAP-HTAN github repo
+main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+
+# Paths to data and output directories
+data_path <- file.path(main_repo_path, "data")
+output_path <- file.path(main_repo_path, "reproduce")
+
+if ((!exists("main_repo_path")) | main_repo_path == "") {
+  stop("Error: Path for main GitHub repo is not set. Please set main_repo_path <- '/path/to/repo/HTAN-FAP' and try again!")
+}
+
+# Create output directory to save the plots if it doesn't exist
+if (!dir.exists(output_path)) {
+  dir.create(output_path)
+}
+```
+
+## Load the required packages
+
+```{r load-packages, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(cowplot)
+library(ComplexUpset)
+library(maftools)
+library(tidyverse)
+
+```
+
+
+## Load SNVs data
+
+```{r load-data}
+
+cohort <- "HTAN"
+
+## load MAF file
+
+maf.file_wgs <- "~/stanford/projects/FAP/results/consensus_calls/01.09.2025/HTAN_WGS_filtered_ppVAFs.maf"
+maf.wgs.df <- read.delim(maf.file_wgs, sep = "\t")
+        
+maf.file_wes <- "~/stanford/projects/FAP/results/consensus_calls/01.09.2025/HTAN_WES_filtered_ppVAFs.maf"
+maf.wes.df <- read.delim(maf.file_wes, sep = "\t")
+
+maf.wes.df <-  maf.wes.df %>% dplyr::filter(!Tumor_Sample_Barcode %in% unique(maf.wgs.df$Tumor_Sample_Barcode))
+maf.df <- rbind(maf.wgs.df, maf.wes.df)
+
+```
+
+
+## Get metadata
+```{r}
+
+## clinical info
+clin.file_htan <- paste0(data_path,'/Table_S2.csv')
+clin_htan.df <- read.delim(clin.file_htan, sep = ",", header = T)
+htan_adca_samples <- clin_htan.df %>% dplyr::filter(Stage == "AdCa")
+clin_htan.df <- clin_htan.df %>% dplyr::filter(Is_FFPE == "No",  Stage != "AdCa")
+
+## exclude two FF AdCa samples
+maf.df.non_adca <- maf.df %>% dplyr::filter(!Tumor_Sample_Barcode %in% htan_adca_samples$Tumor_Sample_Barcode)
+
+genes <- c("APC","KRAS","FBXW7","AMER1","TCF7L2","BRAF","TP53","GNAS","PCBP1","ACVR2A","SOX9","CTNNB1","PIK3CA","ARID1A","ZFP36L2","NRAS","PTEN","SMAD4","SMAD2","TGIF1")
+
+genes_list <- list(
+  HTAN=c("APC","KRAS","FBXW7","AMER1","TCF7L2","BRAF","TP53","GNAS","PCBP1","SOX9","CTNNB1","PIK3CA","ARID1A","ZFP36L2","NRAS"),
+  `PKU-THU`=c("APC","KRAS","FBXW7","TCF7L2","BRAF","GNAS","TP53","ACVR2A","SOX9","CTNNB1","PIK3CA","ARID1A","NRAS","PTEN","SMAD4","SMAD2","TGIF1"),
+  `BCI-QMUL`=c("APC","KRAS","FBXW7","TCF7L2","BRAF","GNAS","TP53","ACVR2A","SOX9","CTNNB1","PIK3CA","ARID1A","NRAS","PTEN","SMAD4","SMAD2","TGIF1")
+)
+
+```
+
+## Create MAFtools object
+```{r}
+htan_maft_obj <- read.maf(maf = maf.df.non_adca, clinicalData = clin_htan.df, vc_nonSyn = NULL)
+```
+## Provide target gene names and get the hits matrix
+
+`count_mutations_in_gene` is a function to count mutations per-sample in a given gene
+```{r}
+
+# A function to count mutations per-sample in a given gene
+count_mutations_in_gene <- function( maf_data, target_genes, variant_class, unique_samples, cohort='HTAN', crc_genes=FALSE) {
+  # Filter mutations by the target genes
+  
+  unique_samples <- unique_samples %>% distinct(Tumor_Sample_Barcode)
+  
+  gene_mutations <- maf_data %>%
+    filter(Hugo_Symbol %in% target_genes)
+  
+  if(!is.null(variant_class))
+  {
+    gene_mutations <- gene_mutations %>% filter(Variant_Classification %in% variant_class) 
+  }
+
+  
+  # Create a dataframe with all combinations of sample IDs and target genes
+  all_combinations <- expand.grid(Tumor_Sample_Barcode = unique_samples)
+  
+  # Count mutations per sample
+  mutations_per_sample <- gene_mutations %>%
+    group_by(Tumor_Sample_Barcode, Hugo_Symbol) %>%
+    summarise(Mutation_Count = n()) %>%
+    spread(key = Hugo_Symbol, value = Mutation_Count, fill = 0)
+  
+  # Merge with all_combinations to include samples without a hit
+  mutations_per_sample <- left_join(all_combinations, mutations_per_sample, by ="Tumor_Sample_Barcode")
+  
+  mutations_per_sample[is.na(mutations_per_sample)] <- 0
+  
+  # Add a column for total mutations across all genes
+  mutations_per_sample <- mutations_per_sample %>%
+    mutate(Total_Hits = rowSums(dplyr::select(., -Tumor_Sample_Barcode)),
+           Has_MultiHits = ifelse(Total_Hits > 1, "yes", "no"),
+           Has_Hits = ifelse(Total_Hits > 0, 1, 0)
+           )
+  
+  mutations_per_sample <- mutations_per_sample %>%
+    mutate(APC = replace_na(APC, 0), KRAS = replace_na(KRAS, 0),TP53 = replace_na(TP53, 0),FBXW7 = replace_na(FBXW7, 0))
+  
+  ## Check the 2nd hits for three genes
+  if(!crc_genes){
+    mutations_per_sample <- mutations_per_sample %>%
+      mutate(APC_2nd = ifelse(APC > 1, "yes", "no")) %>% 
+      mutate(KRAS_2nd = ifelse(KRAS > 1, "yes", "no")) %>% 
+      mutate(TP53_2nd = ifelse(TP53 > 1, "yes", "no")) %>% 
+      mutate(APC_KRAS = APC + KRAS) %>% 
+      mutate(APC_KRAS = ifelse(APC_KRAS > 2, 2, APC_KRAS))
+  }
+  
+  return(mutations_per_sample)
+}
+
+
+## list the gene names to get the mutation hit counts
+target_genes <- c("APC","KRAS", "TP53","FBXW7")
+#target_genes <- genes
+## all classes
+variant_class <- c("Missense_Mutation","Nonsense_Mutation","Nonstop_Mutation","Translation_Start_Site", "Frame_Shift_Del", "Splice_Site", "In_Frame_Del", "Frame_Shift_Ins", "In_Frame_Ins")
+
+sample_stage_in <- list(
+  "HTAN"=c("Mucosa","Benign", "Dysplasia", "AdCa"),
+  "PKUTH"=c("Mucosa","Benign", "Dysplasia", "AdCa"),
+  "SCORT"=c("Adenoma", "Carcinoma")
+)
+
+
+fap_second_hits <- count_mutations_in_gene(maf_data=htan_maft_obj@data, target_genes=target_genes, variant_class=NULL, unique_samples=clin_htan.df,  cohort=cohort, crc_genes = F)
+  
+fap_second_hits <- left_join(fap_second_hits, clin_htan.df %>% dplyr::select(Tumor_Sample_Barcode, Patient, Stage), by="Tumor_Sample_Barcode") 
+  
+fap_second_hits$Stage <- factor(fap_second_hits$Stage, levels=c("Mucosa", "Benign", "Dysplasia", "AdCa"))
+write.table(fap_second_hits, paste0(data_path,"/",cohort,"_APC_KRAS_hits_matrix_wgs_wes.tsv"), sep = "\t", row.names = F, quote = F)
+
+head(fap_second_hits)
+
+```
+
+
+
+## Plot the distribution
+Plot the grouped bar-plot
+
+```{r, fig.width=12, fig.height=5}
+
+stage_color_plates <- c("#66C2A5","#FC8D62", "#8DA0CB","#E78AC3","#eb8f93","#b392b4")
+
+fap_second_hits <- fap_second_hits %>%
+    mutate(APC = ifelse(APC > 0, 1, APC)) %>% 
+    mutate(KRAS = ifelse(KRAS > 0, 1, KRAS)) %>% 
+    mutate(FBXW7 = ifelse(FBXW7 > 0, 1, FBXW7)) %>% 
+    mutate(TP53 = ifelse(TP53 > 0, 1, TP53)) 
+  #%>% 
+   # filter(Has_MultiHits == "yes")
+
+#UpSetR::upset(fap_second_hits, sets = c("APC","KRAS","TP53","FBXW7"), sets.bar.color = "#56B4E9", order.by = "freq", empty.intersections = "on")
+#upset(fap_second_hits, c("APC","KRAS","TP53","FBXW7"), min_size=0, 
+#      n_intersections=15, keep_empty_groups=T, 
+#      base_annotations=list( intersections='all',
+#                             'Intersection size'=intersection_size(counts=T, mapping=aes(fill=Stage))),
+      #themes= upset_modify_themes(to_update=list(colors= stage_color_plates)), width_ratio=0.1, height_ratio = 0.3,)
+
+upset_plot <- ComplexUpset::upset(
+    fap_second_hits,
+    c("APC","KRAS","TP53","FBXW7"),
+    min_size=0,
+    n_intersections=15, keep_empty_groups=T, 
+    base_annotations=list(
+        'Intersection size'=intersection_size(
+            counts=TRUE,
+            mapping=aes(fill=Stage)
+        ) + scale_fill_manual(values=c(
+            'Mucosa'='#66C2A5', 'Benign'='#FC8D62',
+            'Dysplasia'='#8DA0CB', 'AdCa'='#E78AC3'
+        ))
+    ),
+    width_ratio=0.1
+)
+
+## The upset plot in the paper is further edited to removed the stacked bars
+upset_plot
+
+# save the plot
+ggsave(paste0(output_path,"/Figure_1c.pdf"), upset_plot, width = 8, height = 5)
+
+```
+
+
+## Show session information
+```{r session-info}
+sessionInfo()
+```

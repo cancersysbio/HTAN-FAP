@@ -1,0 +1,252 @@
+---
+title: "Onco-plot heatmap - Figure 1a"
+author: 
+  - name: "Aziz Khan"
+    affiliation: "Stanford Cancer Institute, Stanford University"
+    email: "azizk@stanford.edu"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+---
+
+## Setup the base paths
+```{r setup}
+
+set.seed(4321)
+# Set the base path to the FAP-HTAN github repo
+main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+
+# Paths to data and output directories
+data_path <- file.path(main_repo_path, "data")
+output_path <- file.path(main_repo_path, "reproduce")
+
+if ((!exists("main_repo_path")) | main_repo_path == "") {
+  stop("Error: Path for main GitHub repo is not set. Please set main_repo_path <- '/path/to/repo/HTAN-FAP' and try again!")
+}
+
+# Create output directory to save the plots if it doesn't exist
+if (!dir.exists(output_path)) {
+  dir.create(output_path)
+}
+```
+
+## Load the required packages
+
+```{r load-packages, include=FALSE}
+
+library(dplyr)
+library(stringr)
+library(ggpubr)
+library(cowplot)
+library(maftools)
+
+```
+
+
+## Load exonic SNVs and CNAs
+
+```{r load-data}
+
+cohort <- "HTAN"
+
+## load MAF file
+
+maf.file_wgs <- "~/stanford/projects/FAP/results/consensus_calls/01.09.2025/HTAN_WGS_filtered_ppVAFs.maf"
+maf.wgs.df <- read.delim(maf.file_wgs, sep = "\t")
+        
+maf.file_wes <- "~/stanford/projects/FAP/results/consensus_calls/01.09.2025/HTAN_WES_filtered_ppVAFs.maf"
+maf.wes.df <- read.delim(maf.file_wes, sep = "\t")
+
+maf.wes.df <-  maf.wes.df %>% dplyr::filter(!Tumor_Sample_Barcode %in% unique(maf.wgs.df$Tumor_Sample_Barcode))
+maf.df <- rbind(maf.wgs.df, maf.wes.df)
+
+```
+
+
+```{r}
+
+## clinical info
+clin.file_htan <- paste0(data_path,'/Table_S2.csv')
+clin_htan.df <- read.delim(clin.file_htan, sep = ",", header = T)
+htan_adca_samples <- clin_htan.df %>% dplyr::filter(Stage == "AdCa")
+clin_htan.df <- clin_htan.df %>% dplyr::filter(Is_FFPE == "No",  Stage != "AdCa")
+
+## exclude two FF AdCa samples
+maf.df.non_adca <- maf.df %>% dplyr::filter(!Tumor_Sample_Barcode %in% htan_adca_samples$Tumor_Sample_Barcode)
+
+genes <- c("APC","KRAS","FBXW7","AMER1","TCF7L2","BRAF","TP53","GNAS","PCBP1","ACVR2A","SOX9","CTNNB1","PIK3CA","ARID1A","ZFP36L2","NRAS","PTEN","SMAD4","SMAD2","TGIF1")
+
+genes_list <- list(
+  HTAN=c("APC","KRAS","FBXW7","AMER1","TCF7L2","BRAF","TP53","GNAS","PCBP1","SOX9","CTNNB1","PIK3CA","ARID1A","ZFP36L2","NRAS"),
+  #HTAN=c("APC","KRAS","FBXW7","AMER1","TCF7L2","BRAF","PCBP1","GNAS","TP53","SOX9","CTNNB1","PIK3CA","ARID1A","ZFP36L2"),
+  `PKU-THU`=c("APC","KRAS","FBXW7","TCF7L2","BRAF","GNAS","TP53","ACVR2A","SOX9","CTNNB1","PIK3CA","ARID1A","NRAS","PTEN","SMAD4","SMAD2","TGIF1"),
+  `BCI-QMUL`=c("APC","KRAS","FBXW7","TCF7L2","BRAF","GNAS","TP53","ACVR2A","SOX9","CTNNB1","PIK3CA","ARID1A","NRAS","PTEN","SMAD4","SMAD2","TGIF1")
+)
+
+```
+
+## Add copy numbers
+```{r}
+
+cn.file_wgs <-  paste0(data_path,'/copy_number/gene_CN_calls/HTAN_WGS_gene_CNs.tsv')
+cn.wgs.df <- read.delim(cn.file_wgs, sep = "\t")
+        
+cn.file_wes <-  paste0(data_path,'/copy_number/gene_CN_calls/HTAN_WES_gene_CNs.tsv')
+cn.wes.df <- read.delim(cn.file_wes, sep = "\t")
+
+cn.wes.df <-  cn.wes.df %>% dplyr::filter(!sample_id %in% unique(cn.wgs.df$sample_id))
+cn.df <- rbind(cn.wgs.df, cn.wes.df)
+
+## filter the CNAs
+cnTable <- rbind(rbind(cn.df %>% dplyr::filter(CN_call %in% c("GAIN"), gene_chrom !="chrX", sample_id %in% clin_htan.df$Tumor_Sample_Barcode, gene_name %in% genes_list[['HTAN']]) %>% dplyr::select(gene=gene_name, Tumor_Sample_Barcode=sample_id, Type=CN_call, tcn_em),
+                 cn.df %>% dplyr::filter(LOH_call == "LOH", CN_call =="NORMAL", gene_chrom !="chrX", sample_id %in% clin_htan.df$Tumor_Sample_Barcode, gene_name %in% genes_list[['HTAN']]) %>% dplyr::select(gene=gene_name, Tumor_Sample_Barcode=sample_id, Type=LOH_call, tcn_em)
+), cn.df %>% dplyr::filter(CN_call %in% c("LOSS"), tcn_em==0, gene_chrom !="chrX", sample_id %in% clin_htan.df$Tumor_Sample_Barcode, gene_name %in% genes_list[['HTAN']]) %>% dplyr::select(gene=gene_name, Tumor_Sample_Barcode=sample_id, Type=CN_call, tcn_em))
+
+
+cnTable_minimal <- cnTable %>% dplyr::select(gene, Tumor_Sample_Barcode, Type)
+cnTable_minimal <- cnTable_minimal %>% dplyr::mutate(Type=str_to_title(Type), Type = str_replace_all(Type, "Loh", "cnLOH")) 
+
+```
+
+
+###  Get WGD status
+```{r}
+wgd.file_wgs <-  paste0(data_path,'/copy_number/genome_doubling/HTAN_WGS_doubled.tsv')
+wgd.wgs.df <- read.delim(wgd.file_wgs, sep = "\t")
+        
+wgd.file_wes <-  paste0(data_path,'/copy_number/genome_doubling/HTAN_WES_doubled.tsv')
+wgd.wes.df <- read.delim(wgd.file_wes, sep = "\t")
+
+wgd.wes.df <-  wgd.wes.df %>% dplyr::filter(!sample_id %in% unique(wgd.wgs.df$sample_id))
+wgd.df <- rbind(wgd.wgs.df, wgd.wes.df)
+wgd.df <- wgd.df %>% select(Tumor_Sample_Barcode=sample_id, WGD=genome_doubled)
+
+
+clin_htan.df <- merge(clin_htan.df, wgd.df)
+head(clin_htan.df)
+```
+
+## Load MAF file
+```{r}
+
+htan_maftools_obj <- read.maf(maf = maf.df.non_adca, clinicalData = clin_htan.df, cnLevel="deep", cnTable= cnTable_minimal, vc_nonSyn = NULL)
+
+```
+
+
+## Oncoplot for driver genes
+```{r, fig.width=8, fig.height=6}
+## 
+
+# Variant allele frequcnies (Right bar plot) for CRC driver genes
+driver_genes_vaf = subsetMaf(maf= htan_maftools_obj, genes = genes_list[['HTAN']], fields = "ppVAF", mafObj = FALSE)[,mean(ppVAF, na.rm = TRUE), Hugo_Symbol]
+colnames(driver_genes_vaf)[2] = "ppVAF"
+
+
+## order the samples for the heatmap
+
+# Specify the desired order for Patient and Stage
+patient_order <- c("A001", "A002", "A014","A015","F001","G001")
+stage_order <- c("Mucosa", "Benign", "Dysplasia")
+location_order <- c("Ascending","Descending","Rectum","Transverse")
+
+# Reorder the dataframe
+clin_htan.df <- clin_htan.df %>%
+  mutate(
+    Patient = factor(Patient, levels = patient_order),
+    Stage = factor(Stage, levels = stage_order),
+    Location = factor(Location, levels = location_order)
+
+  ) %>%
+  arrange(Patient, Stage, Location)
+    
+cbio_classification = TRUE;
+cbio_colors = c('Truncating' = "#707F8F", 'Missense' = "#008001", 'In-frame' = "#A68027", "Multi_Hit" = "#9b59b6", "pathway" = "#d35400", 'Complex_Event'="#795548", 
+            "Loss"="#3a53a4", "Del"="#3a53a4", "Gain"="#ed2224", "Amp"="#ed2224", "cnLOH"="#aed8e6")
+
+
+if(cohort == "HTAN") plot_width=16 else plot_width=8
+
+#pdf(paste0(output_path,"/Figure1a_",cohort,"_oncoplot_drivers.pdf"), width = plot_width, height = 10)
+
+oncoplot(maf = htan_maftools_obj,
+         draw_titv = F,
+         #titv_col=get_titv_colors(),
+         minMut=1,
+         showTumorSampleBarcodes=F,
+         altered=T,
+         clinicalFeatures =c('Patient','Stage', 'Location', 'WGD'),
+         sortByAnnotation=T,
+         removeNonMutated=F,
+         annoBorderCol="white",
+         drawBox=T,
+         keepGeneOrder=F,
+         fontSize = 0.8,
+         SampleNamefontSize = 0.7,
+         groupAnnotationBySize=F,
+         genes=genes_list[[cohort]],
+         leftBarData = driver_genes_vaf,
+         leftBarLims = c(0, 1),
+         topBarLims = c(0, 200),
+         bgCol="#f0f0f0",
+         borderCol="#bdbdbd",
+         pwLineCol = "#000000",
+         cBioPortal=cbio_classification,
+         colors= cbio_colors,
+         sampleOrder=clin_htan.df$Tumor_Sample_Barcode,
+         #sepwd_genes = 0.2,
+         pwLineWd=0.5,
+         drawRowBar=T,
+         writeMatrix=T,
+         )
+#dev.off()
+
+```
+
+
+## Lollipop plot for APC - Figure ED 1e
+
+```{r}
+
+pdf(paste0(output_path,"/ED_Figure1e_HTAN.pdf"), width = 5, height = 4)
+lollipopPlot(
+  maf = htan_maftools_obj,
+  gene = 'APC',
+  cBioPortal=F,
+  legendTxtSize = 0.5,
+   printCount = T,
+  collapsePosLabel = T,
+  pointSize = 2,
+  showMutationRate = TRUE,
+  #labelPos = "all"
+)
+dev.off()
+
+```
+
+
+## Estimate exonic mutation burden per cohort
+
+```{r, fig.width=4,fig.height=4}
+chohor <- "HTAN"
+
+sample_stages <- c("Mucosa", "Benign", "Dysplasia", "AdCa")
+tmb_temp <- maftools::tmb(htan_maftools_obj, logScale = F)
+tmb_temp <- merge(tmb_temp, clin_htan.df, by= "Tumor_Sample_Barcode")
+tmb_temp$Stage = factor(tmb_temp$Stage, levels=sample_stages)
+tmb_temp$Cohort <- cohort
+
+write.table(tmb_temp %>% dplyr::select(Tumor_Sample_Barcode, total, total_perMB, total_perMB_log, Patient, Stage, Cohort), paste0(data_path,"/",cohort,"_exonic_mutation_burden.tsv"), sep = "\t", row.names = F, quote = F)
+
+```
+
+## Show session information
+```{r session-info}
+sessionInfo()
+```
+
+
