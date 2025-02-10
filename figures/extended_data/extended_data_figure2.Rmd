@@ -1,0 +1,86 @@
+---
+title: " APC and KRAS somatic hits - ED Figure 2"
+author: 
+  - name: "Aziz Khan"
+    affiliation: "Stanford Cancer Institute, Stanford University"
+    email: "azizk@stanford.edu"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+---
+
+## Setup the base paths
+```{r setup}
+set.seed(4321)
+# Set the base path to the FAP-HTAN github repo
+main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+
+# Paths to data and output directories
+data_path <- file.path(main_repo_path, "data")
+output_path <- file.path(main_repo_path, "reproduce")
+
+if ((!exists("main_repo_path")) | main_repo_path == "") {
+  stop("Error: Path for main GitHub repo is not set. Please set main_repo_path <- '/path/to/repo/HTAN-FAP' and try again!")
+}
+
+# Create output directory to save the plots if it doesn't exist
+if (!dir.exists(output_path)) {
+  dir.create(output_path)
+}
+```
+
+## Load the required packages
+
+```{r load-packages, include=FALSE}
+library(dplyr)
+library(ggpubr)
+library(cowplot)
+```
+
+
+## Load the data
+
+```{r load-data}
+apc_kras_hits <- read.table(paste0(data_path,"/HTAN_APC_KRAS_hits_matrix_wgs_wes.tsv"), sep = "\t", header = T)
+
+apc_kras_hits$Stage <- factor(apc_kras_hits$Stage, levels=c("Mucosa", "Benign", "Dysplasia", "AdCa"))
+
+
+stage_color_plates <- c("#66C2A5","#FC8D62", "#8DA0CB","#E78AC3","#eb8f93","#b392b4")
+                        
+head(apc_kras_hits)
+
+```
+
+## Plot the distribution
+Plot the grouped bar-plot
+
+```{r, fig.width=12, fig.height=5}
+apc_dist_plt <- ggplot(apc_kras_hits,  aes(x = APC, fill=Stage, )) + 
+    geom_bar(position = "dodge", color = "black") + ylim(0, 45) +
+    labs(x = "Data type") + theme_cowplot(12) + scale_fill_manual(values = stage_color_plates) + 
+    labs(x="Number of somatic APC hits", y= "Number of samples")
+  
+kras_dist_plt <- ggplot(apc_kras_hits, aes(x = KRAS, fill=Stage, )) + 
+    geom_bar(position = "dodge", color = "black") + ylim(0, 45) +
+    labs(x = "Data type") + theme_cowplot(12) + scale_fill_manual(values = stage_color_plates) + 
+    labs( x="Number of somatic KRAS hits", y= "Number of samples")
+  
+
+apc_kras_dist_plt <- ggarrange(apc_dist_plt, kras_dist_plt, ncol = 2, labels = c("a","b"))
+apc_kras_dist_plt
+
+# save the plot
+ggsave(paste0(output_path,"/ED_Figure2.pdf"), apc_kras_dist_plt, width = 8, height = 5)
+
+```
+
+
+## Show session information
+```{r session-info}
+sessionInfo()
+```
