@@ -1,0 +1,110 @@
+---
+title: "Fraction of genome altered - ED Figure 1 (b-d)"
+author: 
+  - name: "Aziz Khan"
+    affiliation: "Stanford Cancer Institute, Stanford University"
+    email: "azizk@stanford.edu"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+---
+
+## Setup the base paths
+```{r setup}
+
+set.seed(4321)
+# Set the base path to the FAP-HTAN github repo
+main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+
+# Paths to data and output directories
+data_path <- file.path(main_repo_path, "data")
+output_path <- file.path(main_repo_path, "reproduce")
+
+if ((!exists("main_repo_path")) | main_repo_path == "") {
+  stop("Error: Path for main GitHub repo is not set. Please set main_repo_path <- '/path/to/repo/HTAN-FAP' and try again!")
+}
+
+# Create output directory to save the plots if it doesn't exist
+if (!dir.exists(output_path)) {
+  dir.create(output_path)
+}
+```
+
+## Load the required packages
+
+```{r load-packages, include=FALSE}
+
+library(dplyr)
+
+library(ggpubr)
+
+```
+
+
+## Read exonic somaticmutation burden 
+Load the exonic somaticmutation burden  estimates computed using `maftools::tmb` from Maftools.
+```{r}
+
+# color plate for monoclonal and polyclonal in each stage
+stage_color_plates_sporadic <- c("#eb8f93","#b392b4")
+
+stage_color_plates <- c("#66C2A5","#FC8D62", "#8DA0CB","#E78AC3","#eb8f93","#b392b4","#A6D854","#FFD92F","#E5C494","#B3B3B3")
+
+smb <- data.frame()
+
+cohorts <- c("HTAN", "PUTH", "SCORT")
+
+for (cohort in cohorts){
+  smb_tmp <- read.table(paste0(data_path,"/",cohort,"_exonic_mutation_burden.tsv"), sep = "\t", header = TRUE)
+  smb <- rbind(smb, smb_tmp)
+  
+}
+
+smb$Stage = factor(smb$Stage, levels=c("Mucosa", "Benign", "Dysplasia","AdCa", "Adenoma", "Carcinoma"))
+head(smb)
+```
+
+
+## Fraction of genome altered across stage/cohort
+Compare the FGA across stages with-in the three cohorts.
+
+```{r, fig.width= 12, fig.height= 6}
+
+smb_plot_list <- list()
+
+wes_comparisons <- list(c("Mucosa", "Benign"), c("Benign", "Dysplasia"), c("Dysplasia", "Mucosa"))
+
+for(cohort in cohorts){
+   
+  ## plot list
+  smb_plot_list[[cohort]] <- ggboxplot(smb %>% filter(Cohort == cohort, Stage != "AdCa"), x="Stage", y="total", color ="Stage",
+         palette = if(cohort == "SCORT") stage_color_plates_sporadic else stage_color_plates,
+         add = "jitter", add.params = list(fill = "white")) +
+    stat_compare_means(comparisons = if(cohort=="SCORT") list(c("Adenoma", "Carcinoma")) else wes_comparisons,
+                       label = "p.format", paired=F, method = "wilcox.test", method.args = list(alternative = "two.sided")) +
+    #stat_compare_means(label.y = 0.5) + 
+    labs(title=cohort ,x="", y = "Exonic non-silent mutations")
+
+}
+
+smb_plot_combined <- ggarrange(plotlist = smb_plot_list, ncol = 3, nrow = 1, widths=c(2,2,1.5), labels = c("b","c","d"))
+
+smb_plot_combined
+
+## save the plot
+ggsave(paste0(output_path,"/ED_Figure_1b-d.pdf"), smb_plot_combined, width = 12, height = 6)
+
+```
+
+
+
+
+## Show session information
+```{r session-info}
+sessionInfo()
+```
+

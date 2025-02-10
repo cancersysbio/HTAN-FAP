@@ -1,0 +1,306 @@
+---
+title: "Extended Data Figure 1a and e"
+author: 
+  - name: "Aziz Khan"
+    affiliation: "Stanford Cancer Institute, Stanford University"
+    email: "azizk@stanford.edu"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+---
+
+## Setup the base paths
+```{r setup}
+
+set.seed(4321)
+# Set the base path to the FAP-HTAN github repo
+main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+
+# Paths to data and output directories
+data_path <- file.path(main_repo_path, "data")
+output_path <- file.path(main_repo_path, "reproduce")
+
+if ((!exists("main_repo_path")) | main_repo_path == "") {
+  stop("Error: Path for main GitHub repo is not set. Please set main_repo_path <- '/path/to/repo/HTAN-FAP' and try again!")
+}
+
+# Create output directory to save the plots if it doesn't exist
+if (!dir.exists(output_path)) {
+  dir.create(output_path)
+}
+```
+
+## Load the required packages
+
+```{r load-packages, include=FALSE}
+
+library(dplyr)
+library(stringr)
+library(ggpubr)
+library(cowplot)
+library(maftools)
+
+```
+
+
+## Load exonic SNVs and CNAs
+
+```{r load-data}
+
+cohorts <- c("PUTH", "SCORT")
+maf.df_list <- list()
+## load MAF file
+
+for(cohort in cohorts){       
+maf.file <- paste0("~/stanford/projects/FAP/results/consensus_calls/01.09.2025/",cohort,"_filtered_ppVAFs.maf")
+maf.df_list[[cohort]] <- read.delim(maf.file, sep = "\t")
+
+}
+
+```
+
+
+```{r}
+
+## clinical info
+clin_ext.df.list <- list()
+for(cohort in cohorts){     
+  clin.file <- paste0(data_path,'/metadata/',cohort,'_metadata.tsv')
+  clin_ext.df.list[[cohort]] <- read.delim(clin.file, sep = "\t", header = T)
+  
+}
+
+genes_list <- list(
+  `PUTH`=c("APC","KRAS","FBXW7","TCF7L2","BRAF","GNAS","TP53","ACVR2A","SOX9","CTNNB1","PIK3CA","ARID1A","NRAS","PTEN","SMAD4","SMAD2","TGIF1"),
+  `SCORT`=c("APC","KRAS","FBXW7","TCF7L2","BRAF","GNAS","TP53","ACVR2A","SOX9","CTNNB1","PIK3CA","ARID1A","NRAS","PTEN","SMAD4","SMAD2","TGIF1")
+)
+
+```
+
+## Add copy numbers
+```{r}
+
+cnTable_external <- list()
+for(cohort in cohorts){  
+  
+  cn.df <- read.delim(paste0(data_path,'/copy_number/gene_CN_calls/',cohort,'_gene_CNs.tsv'), sep = "\t")
+  
+  ## filter the CNAs
+  cnTable <- rbind(rbind(cn.df %>% dplyr::filter(CN_call %in% c("GAIN"), gene_chrom !="chrX", sample_id %in% clin_ext.df.list[[cohort]]$Tumor_Sample_Barcode, gene_name %in% genes_list[[cohort]]) %>% dplyr::select(gene=gene_name, Tumor_Sample_Barcode=sample_id, Type=CN_call, tcn_em),
+                   cn.df %>% dplyr::filter(LOH_call == "LOH", CN_call =="NORMAL", gene_chrom !="chrX", sample_id %in% clin_ext.df.list[[cohort]]$Tumor_Sample_Barcode, gene_name %in% genes_list[[cohort]]) %>% dplyr::select(gene=gene_name, Tumor_Sample_Barcode=sample_id, Type=LOH_call, tcn_em)
+  ), cn.df %>% dplyr::filter(CN_call %in% c("LOSS"), tcn_em==0, gene_chrom !="chrX", sample_id %in% clin_ext.df.list[[cohort]]$Tumor_Sample_Barcode, gene_name %in% genes_list[[cohort]]) %>% dplyr::select(gene=gene_name, Tumor_Sample_Barcode=sample_id, Type=CN_call, tcn_em))
+  
+  
+  cnTable <- cnTable %>% dplyr::select(gene, Tumor_Sample_Barcode, Type)
+  cnTable_external[[cohort]] <- cnTable %>% dplyr::mutate(Type=str_to_title(Type), Type = str_replace_all(Type, "Loh", "cnLOH")) 
+}
+
+```
+
+
+
+## Load MAF file
+```{r}
+mt_obj_external_cohorts <- list()
+for(cohort in cohorts){  
+  mt_obj_external_cohorts[[cohort]] <- read.maf(maf = maf.df_list[[cohort]], clinicalData = clin_ext.df.list[[cohort]], cnLevel="deep", cnTable= cnTable_external[[cohort]], vc_nonSyn = NULL)
+}
+
+```
+
+
+## Oncoplot for driver genes for PUTH cohort
+```{r, fig.width=8, fig.height=6}
+## 
+cohort <- "PUTH"
+
+# Variant allele frequcnies (Right bar plot) for CRC driver genes
+driver_genes_vaf = subsetMaf(maf= mt_obj_external_cohorts[[cohort]], genes = genes_list[[cohort]], fields = "ppVAF", mafObj = FALSE)[,mean(ppVAF, na.rm = TRUE), Hugo_Symbol]
+colnames(driver_genes_vaf)[2] = "ppVAF"
+
+
+## order the samples for the heatmap
+
+# Specify the desired order for Patient and Stage
+patient_order <- c("FAP1", "FAP2", "FAP3","FAP4","FAP5")
+stage_order <- c("Mucosa", "Benign", "Dysplasia","AdCa")
+location_order <- c("Ascending","Descending","Rectum","Transverse")
+
+# Reorder the dataframe
+clin_ext.df.list[[cohort]] <- clin_ext.df.list[[cohort]] %>%
+  mutate(
+    Patient = factor(Patient, levels = patient_order),
+    Stage = factor(Stage, levels = stage_order),
+    Location = factor(Location, levels = location_order)
+
+  ) %>%
+  arrange(Patient, Stage, Location)
+    
+cbio_classification = TRUE;
+cbio_colors = c('Truncating' = "#707F8F", 'Missense' = "#008001", 'In-frame' = "#A68027", "Multi_Hit" = "#9b59b6", "pathway" = "#d35400", 'Complex_Event'="#795548", 
+            "Loss"="#3a53a4", "Del"="#3a53a4", "Gain"="#ed2224", "Amp"="#ed2224", "cnLOH"="#aed8e6")
+
+
+if(cohort == "HTAN") plot_width=16 else plot_width=8
+
+pdf(paste0(output_path,"/ED_Figure1a_",cohort,"_oncoplot_drivers.pdf"), width = plot_width, height = 10)
+
+oncoplot(maf = mt_obj_external_cohorts[[cohort]],
+         draw_titv = F,
+         #titv_col=get_titv_colors(),
+         minMut=1,
+         showTumorSampleBarcodes=F,
+         altered=T,
+         clinicalFeatures =if (cohort == "SCOART") c('Stage','Patient') else c('Patient','Stage', 'Location'),
+         sortByAnnotation=T,
+         removeNonMutated=F,
+         annoBorderCol="white",
+         drawBox=T,
+         keepGeneOrder=T,
+         fontSize = 0.8,
+         SampleNamefontSize = 0.7,
+         groupAnnotationBySize=F,
+         genes=genes_list[[cohort]],
+         leftBarData = driver_genes_vaf,
+         leftBarLims = c(0, 1),
+         topBarLims = c(0, 200),
+         bgCol="#f0f0f0",
+         borderCol="#bdbdbd",
+         pwLineCol = "#000000",
+         cBioPortal=cbio_classification,
+         colors= cbio_colors,
+         sampleOrder=clin_ext.df.list[[cohort]]$Tumor_Sample_Barcode,
+         #sepwd_genes = 0.2,
+         pwLineWd=0.5,
+         drawRowBar=T,
+         writeMatrix=T,
+         )
+dev.off()
+
+
+```
+
+
+## Oncoplot for driver genes for SCORT cohort
+```{r, fig.width=8, fig.height=6}
+## 
+cohort <- "SCORT"
+
+# Variant allele frequcnies (Right bar plot) for CRC driver genes
+driver_genes_vaf = subsetMaf(maf= mt_obj_external_cohorts[[cohort]], genes = genes_list[[cohort]], fields = "ppVAF", mafObj = FALSE)[,mean(ppVAF, na.rm = TRUE), Hugo_Symbol]
+colnames(driver_genes_vaf)[2] = "ppVAF"
+
+
+## order the samples for the heatmap
+
+# Specify the desired order for Patient and Stage
+patient_order <- c(paste0("A0", 1:3), paste0("A0", 5:9), "C01", paste0("C0", 6:8))
+stage_order <- c("Adenoma", "Carcinoma")
+
+# Reorder the dataframe
+clin_ext.df.list[[cohort]] <- clin_ext.df.list[[cohort]] %>%
+  mutate(
+    Patient = factor(Patient, levels = patient_order),
+    Stage = factor(Stage, levels = stage_order)
+
+  ) %>%
+  arrange(Patient, Stage)
+    
+cbio_classification = TRUE;
+cbio_colors = c('Truncating' = "#707F8F", 'Missense' = "#008001", 'In-frame' = "#A68027", "Multi_Hit" = "#9b59b6", "pathway" = "#d35400", 'Complex_Event'="#795548", 
+            "Loss"="#3a53a4", "Del"="#3a53a4", "Gain"="#ed2224", "Amp"="#ed2224", "cnLOH"="#aed8e6")
+
+
+if(cohort == "HTAN") plot_width=16 else plot_width=8
+
+pdf(paste0(output_path,"/ED_Figure1a_",cohort,"_oncoplot_drivers.pdf"), width = plot_width, height = 10)
+
+oncoplot(maf = mt_obj_external_cohorts[[cohort]],
+         draw_titv = F,
+         #titv_col=get_titv_colors(),
+         minMut=1,
+         showTumorSampleBarcodes=F,
+         altered=T,
+         clinicalFeatures =if (cohort == "SCORT") c('Stage','Patient') else c('Patient','Stage', 'Location'),
+         sortByAnnotation=T,
+         removeNonMutated=F,
+         annoBorderCol="white",
+         drawBox=T,
+         keepGeneOrder=T,
+         fontSize = 0.8,
+         SampleNamefontSize = 0.7,
+         groupAnnotationBySize=F,
+         genes=genes_list[[cohort]],
+         leftBarData = driver_genes_vaf,
+         leftBarLims = c(0, 1),
+         topBarLims = c(0, 200),
+         bgCol="#f0f0f0",
+         borderCol="#bdbdbd",
+         pwLineCol = "#000000",
+         cBioPortal=cbio_classification,
+         colors= cbio_colors,
+         sampleOrder=clin_ext.df.list[[cohort]]$Tumor_Sample_Barcode,
+         #sepwd_genes = 0.2,
+         pwLineWd=0.5,
+         drawRowBar=T,
+         writeMatrix=T,
+         )
+dev.off()
+
+
+```
+
+
+
+## Lollipop plot for APC - ED Figure 1e
+
+```{r}
+for(cohort in c("PUTH","SCORT")){
+pdf(paste0(output_path,"/ED_Figure1e_",cohort,".pdf"), width = 5, height = 4)
+lollipopPlot(
+  maf = mt_obj_external_cohorts[[cohort]],
+  gene = 'APC',
+  cBioPortal=F,
+  legendTxtSize = 0.5,
+   printCount = T,
+  collapsePosLabel = T,
+  pointSize = 2,
+  showMutationRate = TRUE,
+  #labelPos = "all"
+)
+dev.off()
+}
+```
+
+
+
+## Estimate mutation burden per cohort
+
+```{r, fig.width=4,fig.height=4}
+tmb_obj <- list()
+sample_stages <- c("Mucosa", "Benign", "Dysplasia", "AdCa", "Adenoma", "Carcinoma")
+
+for(cohort in c("PUTH","SCORT")){
+  print(cohort)
+  tmb_temp <- maftools::tmb(mt_obj_external_cohorts[[cohort]], logScale = F)
+  tmb_temp <- merge(tmb_temp, clin_ext.df.list[[cohort]], by= "Tumor_Sample_Barcode")
+  tmb_temp$Stage = factor(tmb_temp$Stage, levels=sample_stages)
+  tmb_temp$Cohort <- cohort
+  tmb_obj[[cohort]] <- tmb_temp
+  
+  write.table(tmb_temp %>% dplyr::select(Tumor_Sample_Barcode, total, total_perMB, total_perMB_log, Patient, Stage, Cohort), paste0(data_path,"/",cohort,"_exonic_mutation_burden.tsv"), sep = "\t", row.names = F, quote = F)
+}
+
+```
+
+
+## Show session information
+```{r session-info}
+sessionInfo()
+```
+
+
