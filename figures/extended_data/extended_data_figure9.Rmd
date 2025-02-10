@@ -51,7 +51,11 @@ Load the TelSeq estimates using the FF WGS data
 ```{r}
 
 ## These are 
-telseq_joint <- read.table(paste0(main_repo_path,"/data/telseq_estimates_wgs_ff_monoploy.tsv"), sep = "\t", header = TRUE)
+telseq_joint <- read.table(paste0(main_repo_path,"/data/telseq_estimates_wgs_ff.tsv"), sep = "\t", header = TRUE)
+mono_poly <- read.table(paste0(main_repo_path,"/data/clonal_count_estimation/clonal_SNVs_WES_WGS.csv"), sep = ",", header = TRUE) %>% 
+  filter(has_WGS == "True") %>% mutate(Group = ifelse(is_poly_WGS == "True", "Poly", "Mono")) %>%  select(Tumor_Sample_Barcode, Group)
+
+telseq_joint <- merge(telseq_joint, mono_poly, by="Tumor_Sample_Barcode")
 
 head(telseq_joint)
 
@@ -91,7 +95,7 @@ telseq_patients.plt <- ggboxplot(telseq_joint_patients, x = "Patient", y="TL",
 telseq_patients.plt
 
 ## save the plot
-ggsave(paste0(output_path,"/ED_Figure_9.pdf"), telseq_patients.plt, width = 12, height = 6)
+ggsave(paste0(output_path,"/ED_Figure_9.pdf"), telseq_patients.plt, width = 8.5, height = 6)
 
 ```
 
