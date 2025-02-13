@@ -37,10 +37,62 @@ if (!dir.exists(output_path)) {
 ## Load the required packages
 
 ```{r load-packages, include=FALSE}
+
 library(dplyr)
+
 library(ggpubr)
 
 ```
+
+
+## Add copy numbers
+```{r}
+
+cn_df_list <- list()
+for(cohort in cohorts){
+  cn_df_list[[cohort]] <- cn.df %>% dplyr::select()
+}
+
+
+for(cohort in c("HTAN","PUTH"))
+{
+  cnv <- read.delim(paste0(data_path,'/copy_number/gene_CN_calls/',cohort,'_gene_CNs.tsv'), sep = "\t")
+  cnv <- cnv %>% filter(Chromosome %in% c(1:22))
+
+  ##get the groups of CNAs
+  mucosa_cnv <- cnv %>% filter(Stage == "Mucosa")
+  mucosa_cnv <- validate.cnv(mucosa_cnv)
+  
+  #("Benign", "Dysplasia"), c("Mucosa", "Dysplasia") )
+  benign_cnv <- cnv %>% filter(Stage %in% c("Benign"))
+  benign_cnv <- validate.cnv(benign_cnv)
+  
+  dysplasia_cnv <- cnv %>% filter(Stage %in% c("Dysplasia"))
+  dysplasia_cnv <- validate.cnv(dysplasia_cnv)
+  
+  adca_cnv <- cnv %>% filter(Stage %in% c("AdCa"))
+  adca_cnv <- validate.cnv(adca_cnv)
+  
+  pdf(paste0(fap_project_path,"/figures/2022/",cohort,"_merged_CNA_freq_plot.pdf"), width = 10, height = 10)
+  par(mfrow=c(4,1))
+  cnv.freq(mucosa_cnv, fc.pct = 0.2, ploidy = TRUE, plot=TRUE, label.line="", genome.v= "hg38")
+  cnv.freq(benign_cnv, fc.pct = 0.2, ploidy = TRUE, plot=TRUE, label.line="", genome.v= "hg38")
+  cnv.freq(dysplasia_cnv, fc.pct = 0.2, ploidy = TRUE, plot=TRUE, label.line="", genome.v= "hg38")
+  cnv.freq(adca_cnv, fc.pct = 0.2, ploidy = TRUE, plot=TRUE, label.line="", genome.v= "hg38")
+  dev.off()
+  
+  
+  ##write matrices
+  temp_charm <- t(chr.arm.cnv(validate.cnv(cnv), genome.v = "hg38", verbose = FALSE))
+  #temp_charm$Tumor_Sample_Barcode 
+  write.table(temp_charm, paste0(fap_project_path,"/figures/2022/data/",cohort,"_chrom_arm_CNA.tsv"), sep = "\t", row.names = T, quote = F)
+
+}
+
+```
+
+
+
 
 
 ## Read FGA data
@@ -59,7 +111,6 @@ stage_color_plates_sporadic <- c("#eb8f93","#b392b4")
 stage_color_plates <- c("#66C2A5","#FC8D62", "#8DA0CB","#E78AC3","#eb8f93","#b392b4","#A6D854","#FFD92F","#E5C494","#B3B3B3")
 
 ```
-
 
 
 ## Fraction of genome altered across stage/cohort
