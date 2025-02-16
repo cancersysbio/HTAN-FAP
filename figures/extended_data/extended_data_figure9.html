@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2025-02-07" />
+<meta name="date" content="2025-02-15" />
 
 <title>Telomere length and clonality - ED Figure 9</title>
 
@@ -356,7 +356,7 @@ display: none;
 Stanford Cancer Institute, Stanford
 University<br><a class="author_email" href="mailto:#"><a href="mailto:azizk@stanford.edu" class="email">azizk@stanford.edu</a></a>
 </address>
-<h4 class="date">February 07, 2025</h4>
+<h4 class="date">February 15, 2025</h4>
 
 </div>
 
@@ -518,8 +518,8 @@ for (stage in unique(telseq_joint$Stage)) {
     if (length(unique(subset$Group)) == 2) { 
       mono &lt;- subset %&gt;% filter(Group == &#39;Mono&#39;) %&gt;% pull(TL)
       poly &lt;- subset %&gt;% filter(Group == &#39;Poly&#39;) %&gt;% pull(TL)
-      # there should be at least two data points to calculate the p-value
-      if (length(mono) &gt; 1 &amp; length(poly) &gt; 1) { 
+      # there should be at least three data points to calculate the p-value
+      if (length(mono) &gt; 2 &amp; length(poly) &gt; 2) { 
         test_result &lt;- wilcox.test(mono, poly, alternative=&quot;two.sided&quot;)
         print(paste(patient, stage,&quot; p=&quot;,test_result$p.value))
         p_values &lt;- c(p_values, test_result$p.value)
@@ -539,16 +539,14 @@ print(paste0(&quot;Stouffer&#39;s Z-score:&quot;, combined_p_value_stouffer))
 <pre><code>## [1] &quot;Dysplasia&quot;
 ## [1] &quot;A002 Dysplasia  p= 0.0312187812187812&quot;
 ## [1] &quot;F001 Dysplasia  p= 0.00495356037151703&quot;
-## [1] &quot;G001 Dysplasia  p= 0.153846153846154&quot;
-## [1] &quot;Fisher&#39;s method:0.0016253531504096&quot;
-## [1] &quot;Stouffer&#39;s Z-score:0.000806173208479477&quot;
+## [1] &quot;Fisher&#39;s method:0.00151155100272943&quot;
+## [1] &quot;Stouffer&#39;s Z-score:0.00084148394313559&quot;
 ## [1] &quot;Mucosa&quot;</code></pre>
 <pre><code>## Warning in sumlog(p_values): Must have at least two valid p values</code></pre>
 <pre><code>## [1] &quot;Fisher&#39;s method:NA&quot;</code></pre>
 <pre><code>## Warning in sumz(p_values): Must have at least two valid p values</code></pre>
 <pre><code>## [1] &quot;Stouffer&#39;s Z-score:NA&quot;
-## [1] &quot;Benign&quot;
-## [1] &quot;F001 Benign  p= 1&quot;</code></pre>
+## [1] &quot;Benign&quot;</code></pre>
 <pre><code>## Warning in sumlog(p_values): Must have at least two valid p values</code></pre>
 <pre><code>## [1] &quot;Fisher&#39;s method:NA&quot;</code></pre>
 <pre><code>## Warning in sumz(p_values): Must have at least two valid p values</code></pre>

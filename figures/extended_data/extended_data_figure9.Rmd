@@ -140,8 +140,8 @@ for (stage in unique(telseq_joint$Stage)) {
     if (length(unique(subset$Group)) == 2) { 
       mono <- subset %>% filter(Group == 'Mono') %>% pull(TL)
       poly <- subset %>% filter(Group == 'Poly') %>% pull(TL)
-      # there should be at least two data points to calculate the p-value
-      if (length(mono) > 1 & length(poly) > 1) { 
+      # there should be at least three data points to calculate the p-value
+      if (length(mono) > 2 & length(poly) > 2) { 
         test_result <- wilcox.test(mono, poly, alternative="two.sided")
         print(paste(patient, stage," p=",test_result$p.value))
         p_values <- c(p_values, test_result$p.value)
