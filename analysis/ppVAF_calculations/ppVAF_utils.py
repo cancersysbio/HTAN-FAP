@@ -234,3 +234,11 @@ def single_diploid_mutation_posterior(t_alt, t_depth, purity):
     normed_prob_mat = np.divide(normed_prob_mat, np.sum(normed_prob_mat, axis=None))
     marginalized = np.sum(normed_prob_mat, axis=0) * 1000
     return marginalized
+
+def single_diploid_mutation_posterior_puritydist(t_alt, t_depth, purity_dist):
+    prob_mat = estimate_ccf_purity(2, 1, t_alt, t_depth)
+
+    normed_prob_mat = np.multiply(prob_mat, purity_dist.reshape((-1, 1)))
+    normed_prob_mat = np.divide(normed_prob_mat, np.sum(normed_prob_mat, axis=None))
+    marginalized = np.sum(normed_prob_mat, axis=0) * 1000
+    return marginalized
