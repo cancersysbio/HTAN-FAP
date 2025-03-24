@@ -17,7 +17,10 @@ output:
 ```{r setup}
 set.seed(4321)
 # Set the base path to the FAP-HTAN github repo
-main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+main_repo_path <- ""
+
+# Set the base path containing the HTAN filtered mafs (HTAN_WGS_filtered_ppVAFs.maf and HTAN_WES_filtered_ppVAFs.maf)
+HTAN_maf_path <- ""
 
 # Paths to data and output directories
 data_path <- file.path(main_repo_path, "data")
@@ -54,10 +57,10 @@ cohort <- "HTAN"
 
 ## load MAF file
 
-maf.file_wgs <- "~/stanford/projects/FAP/results/consensus_calls/01.09.2025/HTAN_WGS_filtered_ppVAFs.maf"
+maf.file_wgs <- paste0(HTAN_maf_path, "/HTAN_WGS_filtered_ppVAFs.maf")
 maf.wgs.df <- read.delim(maf.file_wgs, sep = "\t")
         
-maf.file_wes <- "~/stanford/projects/FAP/results/consensus_calls/01.09.2025/HTAN_WES_filtered_ppVAFs.maf"
+maf.file_wes <- paste0(HTAN_maf_path, "/HTAN_WES_filtered_ppVAFs.maf")
 maf.wes.df <- read.delim(maf.file_wes, sep = "\t")
 
 maf.wes.df <-  maf.wes.df %>% dplyr::filter(!Tumor_Sample_Barcode %in% unique(maf.wgs.df$Tumor_Sample_Barcode))
@@ -73,7 +76,7 @@ maf.df <- rbind(maf.wgs.df, maf.wes.df)
 clin.file_htan <- paste0(data_path,'/Table_S2.csv')
 clin_htan.df <- read.delim(clin.file_htan, sep = ",", header = T)
 htan_adca_samples <- clin_htan.df %>% dplyr::filter(Stage == "AdCa")
-clin_htan.df <- clin_htan.df %>% dplyr::filter(Is_FFPE == "No",  Stage != "AdCa")
+clin_htan.df <- clin_htan.df %>% dplyr::filter(Stage != "AdCa")
 
 ## exclude two FF AdCa samples
 maf.df.non_adca <- maf.df %>% dplyr::filter(!Tumor_Sample_Barcode %in% htan_adca_samples$Tumor_Sample_Barcode)
