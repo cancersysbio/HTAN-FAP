@@ -18,7 +18,7 @@ output:
 
 set.seed(4321)
 # Set the base path to the FAP-HTAN github repo
-main_repo_path <- "~/stanford/projects/FAP/HTAN-FAP"
+main_repo_path <- ""
 
 # Paths to data and output directories
 data_path <- file.path(main_repo_path, "data")
@@ -69,8 +69,8 @@ head(smb)
 ```
 
 
-## Fraction of genome altered across stage/cohort
-Compare the FGA across stages with-in the three cohorts.
+## Somatic mutation burden across stage/cohort
+Compare the somatic mutation burden across stages between the three cohorts.
 
 ```{r, fig.width= 12, fig.height= 6}
 

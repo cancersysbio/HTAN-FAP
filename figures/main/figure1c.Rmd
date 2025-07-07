@@ -1,5 +1,5 @@
 ---
-title: " APC and KRAS somatic hits - ED Figure 2"
+title: " UpSet plot, Figure 1c"
 author: 
   - name: "Aziz Khan"
     affiliation: "Stanford Cancer Institute, Stanford University"

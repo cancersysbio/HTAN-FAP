@@ -27,6 +27,7 @@ Requires:
 
 Generates:
 * HTAN upset plot (Fig. 1c)
+* HTAN APC and KRAS mutation information table (in this repo at `data/HTAN_APC_KRAS_hits_matrix_wgs_wes.tsv`)
 
 `figure1dg.ipynb`
 
