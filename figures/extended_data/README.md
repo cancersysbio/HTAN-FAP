@@ -19,4 +19,5 @@ Requires:
 
 Generates:
 * plots for ED Fig. 3a-f
+* Annotated table of fraction genome altered in HTAN samples, saved as HTAN_FGA_combined.csv
 
