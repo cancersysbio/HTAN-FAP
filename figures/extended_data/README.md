@@ -11,6 +11,8 @@ Plots and saves oncoplots to make Extended Data Fig. 1a and lollipop plots for E
 
 Requires:
 * filtered PUTH and SCORT mafs (not provided, would have to generate these yourself following the preprocessing pipeline described in the Methods)
+* gene-level PUTH and SCORT copy number calls (not provided, would have to generate these yourself with FACETS and our provide processing script at `analysis/copy_number/filter_FACETS_calls.ipynb`)
+* FACETS whole genome doubling calls for the PUTH and SCORT datasets (not provided, would have to generate these yourself with FACETS)
 * PUTH and SCORT metadata (in this repo at `data/metadata/PUTH_metadata.tsv` and `data/metadata/SCORT_metadata.tsv`)
 
 Generates:
@@ -53,7 +55,7 @@ Requires:
 
 Generates:
 * plots for ED Fig. 3a-f
-* Annotated table of fraction genome altered in HTAN samples, saved as HTAN_FGA_combined.csv
+* annotated table of fraction genome altered in HTAN samples, saved in `data/copy_number/fraction_genome_altered/HTAN_FGA_combined.csv`
 
 `extended_data_figure4.ipynb`
 

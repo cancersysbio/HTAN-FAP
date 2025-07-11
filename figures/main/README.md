@@ -10,6 +10,8 @@ Plots and saves oncoplot to make main text Fig. 1b. NB: also generates and saves
 
 Requires:
 * filtered HTAN WGS and WES mafs (found in Zenodo dataset as `HTAN_WGS_filtered_ppVAFs.maf` and `HTAN_WES_filtered_ppVAFs.maf`)
+* gene-level HTAN WGS and WES copy number calls (in this repo at `data/copy_number/gene_CN_calls/HTAN_WGS_gene_CNs.tsv` and `data/copy_number/gene_CN_calls/HTAN_WES_gene_CNs.tsv`)
+* FACETS whole genome doubling calls for the HTAN datasets (in this repo at `data/copy_number/genome_doubling/HTAN_WGS_doubled.tsv/` and `data/copy_number/genome_doubling/HTAN_WES_doubled.tsv/`)
 * Table S2 with HTAN metadata (in this repo at `data/Table_S2.csv`)
 
 Generates:
