@@ -1,0 +1,22 @@
+# Core data science and analysis packages
+numpy
+pandas
+scipy
+
+# Visualization packages
+matplotlib
+seaborn
+itables
+
+# Bioinformatics packages
+biopython
+pyranges
+
+# Progress bars and utilities
+tqdm
+ipykernel
+setuptools
+typing-extensions
+
+# HTTP requests
+requests
