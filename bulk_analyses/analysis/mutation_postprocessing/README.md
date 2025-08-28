@@ -12,7 +12,7 @@ Requires:
 * unfiltered HTAN WGS and WES mafs (found in Zenodo dataset as `HTAN_WGS_unfiltered.maf` and `HTAN_WES_unfiltered.maf`)
 * unfiltered SCORT and PUTH mafs (not provided, would have to generate these yourself following the preprocessing pipeline described in the Methods)
 * hg38 blacklisted regions from UCSC (in this repo at `data/resource/hg38.UCSC.centromere.telomere.encode.bed`)
-* COADREAD driver gene list (in this repo at `data/resource/PanCanDrivers_Cell2018.csv`)
+* COADREAD driver gene list (in this repo at `data/resource/PanCanDrivers_COADREAD_Cell2018.csv`)
 
 Generates:
 * filtered HTAN WGS and WES mafs **without** copy number information (temp filenames used are `*_filtered.maf`)

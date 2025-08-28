@@ -1,0 +1,21 @@
+Gene,Cancer,Tumor suppressor or oncogene prediction (by 20/20+),Decision,Tissue Frequency,Ryan_list,INTOGEN_COREAD
+ACVR2A,COADREAD,Tumor suppressor (tsg),official,2.85%,Yes,Yes
+AMER1,COADREAD,possible tsg,official,11.71%,Yes,Yes
+APC,COADREAD,tsg,official,81.96%,Yes,Yes
+ARID1A,COADREAD,possible oncogene,official,5.06%,Yes,Yes
+BRAF,COADREAD,oncogene,official,5.06%,Yes,Yes
+CTNNB1,COADREAD,oncogene,official,3.80%,Yes,Yes
+FBXW7,COADREAD,tsg,official,12.03%,Yes,Yes
+GNAS,COADREAD,oncogene,official,3.48%,Yes,Yes
+KRAS,COADREAD,oncogene,official,47.78%,Yes,Yes
+NRAS,COADREAD,oncogene,official,6.01%,Yes,Yes
+PCBP1,COADREAD,oncogene,official,5.38%,Yes,Yes
+PIK3CA,COADREAD,oncogene,official,23.10%,Yes,Yes
+PTEN,COADREAD,tsg,official,4.43%,Yes,Yes
+SMAD2,COADREAD,possible tsg,official,3.48%,Yes,Yes
+SMAD4,COADREAD,tsg,official,12.03%,Yes,Yes
+SOX9,COADREAD,tsg,official,12.97%,Yes,Yes
+TCF7L2,COADREAD,tsg,official,10.13%,Yes,Yes
+TGIF1,COADREAD,possible tsg,official,4.11%,Yes,Yes
+TP53,COADREAD,tsg,official,72.78%,Yes,Yes
+ZFP36L2,COADREAD,possible tsg,official,3.80%,Yes,Yes
