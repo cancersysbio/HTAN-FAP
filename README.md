@@ -1,18 +1,23 @@
 ### Code repo for: *Polyclonal origins of human premalignant colorectal lesions*
 
 ### :file_folder: Repository content ###
-
 This GitHub repository contains the following folders:
 ```
 | 
-└─ analysis/: directory containing code used for data analysis
-|   └─ 
-└─ figures/: directory containing scripts, notebooks and other code to reproduce figures
-|   └─ main/: scripts and notebooks for main figures
-|   └─ extended_data/: scripts and notebooks for extended data figures
-|   └─ supplementary/: scripts and notebooks for supplementary figures
+└─ bulk_analyses/: directory containing code to analyze bulk sequencing data (WES/WGS)
+|   └─ analysis/: code used for data analysis
+|   └─ data/: summary level data to generate main, extended and SI figures
+|   └─ figures/: scripts, notebooks and other code to reproduce figures
+|       └─ main/: scripts and notebooks for main figures
+|       └─ extended_data/: scripts and notebooks for extended data figures
+|       └─ supplementary/: scripts and notebooks for supplementary figures
 | 
-└─ data/: directory containing summary level data to generate main, extended and SI figures  
+└─ sgWGS_analyses/: directory containing single-crypt whole genome sequencing analyses
+    └─ sgutils/: utility module for filtering and phylogenetic analysis
+    └─ data/: sgWGS-specific data files
+    └─ binomial_mixture_filter.ipynb: filtering and analysis notebook
+    └─ generate_figures.ipynb: main figure generation notebook
+    └─ supplemental_figures.ipynb: supplementary figure generation notebook
 ```
 
 ### :file_folder: Access to data

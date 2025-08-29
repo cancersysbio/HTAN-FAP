@@ -28,7 +28,7 @@ Requires:
 * annotated table of fraction genome altered in HTAN samples, saved in `data/copy_number/fraction_genome_altered/HTAN_FGA_combined.csv`
 * gene-level copy number calls for the HTAN datasets (in this repo at `data/copy_number/gene_CN_calls/HTAN_WGS_gene_CNs.tsv` and `data/copy_number/gene_CN_calls/HTAN_WES_gene_CNs.tsv`)
 * WGD information (FACETS HTAN calls in this repo at `data/genome_doubling/*_doubled.tsv`)
-* COADREAD driver gene list (in this repo at `data/resource/PanCanDrivers_Cell2018.csv`)
+* COADREAD driver gene list (in this repo at `data/resource/PanCanDrivers_COADREAD_Cell2018.csv`)
 
 Generates:
 No files, but prints out the numerical data presented in the main text of the manuscript
