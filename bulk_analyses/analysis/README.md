@@ -15,7 +15,6 @@ analysis
 └── ppVAF_calculations
 │ └──  README.md
 └── telomere
-  └── README.md
 ```
 
 ## Description of scripts

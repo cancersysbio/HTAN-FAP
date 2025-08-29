@@ -37,7 +37,7 @@ Plots and saves panels to make main text Fig. 1d-g
 
 Requires:
 * filtered HTAN WGS and WES mafs (found in Zenodo dataset as `HTAN_WGS_filtered_ppVAFs.maf` and `HTAN_WES_filtered_ppVAFs.maf`)
-* APC mutation marginalized posterior ppVAF distribution (found in Zenodo dataset as `*_marginals_WGS.csv` and `*_marginals_WES.csv`)
+* APC/KRAS mutation marginalized posterior ppVAF distributions (found in Zenodo dataset as `*_marginals_WGS.csv` and `*_marginals_WES.csv`)
 
 Generates:
 * plots for Fig. 1d-g

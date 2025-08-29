@@ -27,7 +27,7 @@ Generates:
 
 `SI_Text_1.ipynb`
 
-Plots and saves all panels needed for figures in Supplementary Text 1. Calls the same functions needed for clonal/subclonal mutation classification and clonal SNV count estimation in the main text, stored in the shared code file `analysis/ppVAF_calculations/ppVAF_utils.py`.
+Plots and saves all panels needed for figures in Supplementary Note 1. Calls the same functions needed for clonal/subclonal mutation classification and clonal SNV count estimation in the main text, stored in the shared code file `analysis/ppVAF_calculations/ppVAF_utils.py`.
 
 Requires:
 * filtered HTAN WGS and WES mafs (found in Zenodo dataset as `HTAN_WGS_filtered_ppVAFs.maf` and `HTAN_WES_filtered_ppVAFs.maf`)
@@ -36,11 +36,11 @@ Requires:
 * simulated clonal mutation mafs needed for clonal/subclonal classifier (in this repo at `data/clonal_count_estimation/simulated_clonal_WGS.csv` and `data/clonal_count_estimation/simulated_clonal_WES.csv`)
 
 Generates:
-* all plots for Fig. ST1-5 in Supplementary Text 1
+* all plots for Fig. SN1* in Supplementary Note 1
 
 `SI_Text_2.ipynb`
 
-Plots and saves all panels needed for figures in Supplementary Text 2. 
+Plots and saves all panels needed for figures in Supplementary Note 2. 
 
 Requires:
 * filtered HTAN WGS and WES mafs (found in Zenodo dataset as `HTAN_WGS_filtered_ppVAFs.maf` and `HTAN_WES_filtered_ppVAFs.maf`)
@@ -48,6 +48,7 @@ Requires:
 * pickled scATAC-seq purity distribution dictionary (in this repo at `data/scATACseq_annotations/scATAC_purities.p`)
 * Sequenza and FACETS estimated sample purity tables (in this repo at `data/HTAN_WGS_facets_sequenza_purities.csv` and `data/HTAN_WES_facets_sequenza_purities.csv`)
 * scATAC-seq cell fraction table (in this repo at `data/scATACseq_annotations/scATAC_celltype_fracs.csv`)
+* clonal SNV counts and monoclonal/polyclonal classifications for simulated monoclonal WGS samples with specified sample purities (in this repo at `data/purity_sims/`)
 
 Generates:
-* all plots for Fig. ST6-9 in Supplementary Text 2
+* all plots for Fig. SN2* in Supplementary Note 2
