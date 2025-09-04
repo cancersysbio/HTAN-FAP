@@ -27,5 +27,7 @@ This GitHub repository contains the following folders:
   
 - WES data for the FAP multi-region and sporadic CRC cohorts should be requested through the original authors/organizations. We have not provided raw data or processed data files but have provided the code needed to generate our results from the raw data. Note that throughout this repo in READMEs and filenames, the external FAP patient multiregion WES data from Li et al (https://pubmed.ncbi.nlm.nih.gov/31744909/) is referred to as **PUTH** and the sporadic multiregion WES data from Cross et al (https://pubmed.ncbi.nlm.nih.gov/30177804/) is referred to as **SCORT**.
 
+- Additional larger intermediate data files that may be helpful to run the code here and reproduce our findings (e.g., somatic MAF files describing the mutations in each sample) can be downloaded from Zenodo at https://doi.org/10.5281/zenodo.13228021.
+
 ### :white_check_mark: Citation
 
