@@ -20,7 +20,7 @@ Polyposis) samples, with a focus on phylogenetic reconstruction.
 
 ### Data Organization
 
-**NOTE:** The contents of the `data/` folder are downloadable from Zenodo at [[insert link]]
+**NOTE:** The contents of the `data/` folder are downloadable from Zenodo at https://doi.org/10.5281/zenodo.13228021, by extracting the `sgWGS.zip` archive.
 
 - **`data/`**: Contains input mutation data, metadata, and reference files (*from Zenodo*)
   - **`v3/`**: Latest version of somatic mutation data (MAF format)
