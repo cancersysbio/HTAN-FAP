@@ -85,10 +85,10 @@ authors:
     given-names: "Michael P."
   - family-names: "Curtis"
     given-names: "Christina"
-date-released: "2025-09-08"
-doi: "10.1101/2025.09.08.674484"
-url: "https://doi.org/10.1101/2025.09.08.674484"
+identifiers:
+  - type: doi
+    value: 10.1101/2025.09.08.674484
+date-released: 2021-08-11
 repository-code: "https://github.com/cancersysbio/HTAN-FAP/"
-type: article
 license: "MIT"
 version: "1.0.0"
