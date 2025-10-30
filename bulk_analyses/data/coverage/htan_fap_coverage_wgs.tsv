@@ -74,8 +74,6 @@ F080B	F001	Dysplasia	49
 F088B	F001	Dysplasia	77
 F092	F001	Dysplasia	51
 F098	F001	Dysplasia	56
-FA7	F001	AdCa	7
-FA8	F001	AdCa	21
 G_Dec_NL-1	G001	Mucosa	40
 G_Desc_3	G001	Mucosa	47
 G004	G001	Dysplasia	47
@@ -97,5 +95,3 @@ G63	G001	Benign	33
 G69	G001	Benign	34
 G6B	G001	Dysplasia	19
 G9	G001	Benign	34
-GA24	G001	AdCa	48
-GA26	G001	AdCa	38
